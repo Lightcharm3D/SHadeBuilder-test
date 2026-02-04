@@ -22,33 +22,54 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
     scene.background = new THREE.Color(0x020617);
     sceneRef.current = scene;
 
-    const camera = new THREE.PerspectiveCamera(50, containerRef.current.clientWidth / containerRef.current.clientHeight, 0.1, 1000);
-    camera.position.set(0, 0, 50);
+    const camera = new THREE.PerspectiveCamera(50, containerRef.current.clientWidth / containerRef.current.clientHeight, 0.1, 2000);
+    camera.position.set(0, 50, 150);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(containerRef.current.clientWidth, containerRef.current.clientHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
     containerRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // Lighting setup to simulate lithophane effect
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
+    // Lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
     scene.add(ambientLight);
 
-    // Backlight (The "Bulb")
-    const backLight = new THREE.PointLight(0xfff4e0, 2, 100);
-    backLight.position.set(0, 0, -20);
+    const mainLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    mainLight.position.set(50, 100, 50);
+    mainLight.castShadow = true;
+    scene.add(mainLight);
+
+    const backLight = new THREE.PointLight(0xfff4e0, 1, 200);
+    backLight.position.set(0, 20, -50);
     scene.add(backLight);
 
-    // Front fill
-    const frontLight = new THREE.DirectionalLight(0xffffff, 0.5);
-    frontLight.position.set(10, 10, 20);
-    scene.add(frontLight);
+    // Buildplate (Print Bed)
+    const bedSize = 250; // 250mm typical bed
+    const bedGroup = new THREE.Group();
+    
+    const bedGeom = new THREE.PlaneGeometry(bedSize, bedSize);
+    const bedMat = new THREE.MeshStandardMaterial({ 
+      color: 0x1e293b, 
+      roughness: 0.8,
+      metalness: 0.2
+    });
+    const bed = new THREE.Mesh(bedGeom, bedMat);
+    bed.rotation.x = -Math.PI / 2;
+    bed.receiveShadow = true;
+    bedGroup.add(bed);
+    
+    const grid = new THREE.GridHelper(bedSize, 25, 0x475569, 0x334155);
+    grid.position.y = 0.1;
+    bedGroup.add(grid);
+    scene.add(bedGroup);
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
     controls.screenSpacePanning = false;
+    controls.maxPolarAngle = Math.PI / 1.8;
     controlsRef.current = controls;
 
     const animate = () => {
@@ -93,13 +114,22 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
       const material = new THREE.MeshStandardMaterial({
         color: 0xffffff,
         side: THREE.DoubleSide,
-        roughness: 0.3,
+        roughness: 0.4,
         metalness: 0.1,
         transparent: true,
-        opacity: 0.9
+        opacity: 0.95
       });
 
       const mesh = new THREE.Mesh(geometry, material);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      
+      // Rotate to sit flat on the bed (XY to XZ)
+      mesh.rotation.x = -Math.PI / 2;
+      
+      // Position it slightly above the bed to avoid z-fighting
+      mesh.position.y = 0.5; 
+      
       sceneRef.current.add(mesh);
       meshRef.current = mesh;
     }
