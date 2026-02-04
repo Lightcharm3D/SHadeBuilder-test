@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { mergeGeometries, mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 export type LampshadeType = 
   | 'ribbed_drum' 
@@ -418,7 +418,8 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
   }
   
   geometry.computeVertexNormals();
-  return geometry;
+  // Ensure the final geometry is manifold and solid
+  return mergeVertices(geometry);
 }
 
 function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
@@ -448,7 +449,7 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
   const baseRadiusAtZ = getRadiusAtHeight(yPos, params);
   const diameterMm = baseRadiusAtZ * 2 * 10;
   const wallThicknessCm = thickness;
-  const safetyMarginCm = 0.1; // Increased to 1mm for absolute safety
+  const safetyMarginCm = 0.1; // 1mm safety margin
   
   let spokeThickMm = Math.max(2, Math.min(6, diameterMm * 0.015));
   let spokeCount = Math.max(4, Math.round(diameterMm / 20));
@@ -469,50 +470,47 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
       angle = Math.round(angle / step) * step;
     }
 
-    // Initial length calculation for the box geometry
-    const disp = getDisplacementAt(angle, yPos, params);
-    const outerHitR = baseRadiusAtZ + disp;
-    const innerHitR = outerHitR - wallThicknessCm;
-    const finalSpokeEndR = innerHitR + fuseDepthCm;
-    const spokeLength = Math.max(0.1, finalSpokeEndR - outerRadius);
+    // Create a long spoke that we will clip
+    const maxPossibleLength = (params.bottomRadius + params.topRadius) * 2;
+    const spoke = new THREE.BoxGeometry(maxPossibleLength, spokeThickCm, spokeWidthCm, 40, 1, 1);
     
-    // Use more segments for better organic conformity
-    const spoke = new THREE.BoxGeometry(spokeLength, spokeThickCm, spokeWidthCm, 20, 1, 1);
+    // Move to final position BEFORE vertex manipulation
+    spoke.translate(outerRadius + maxPossibleLength / 2, yPos, 0);
+    spoke.rotateY(angle);
+    
     const pos = spoke.attributes.position;
-    
     for (let j = 0; j < pos.count; j++) {
-      const px = pos.getX(j);
-      const py = pos.getY(j);
-      const pz = pos.getZ(j);
+      const vx = pos.getX(j);
+      const vy = pos.getY(j);
+      const vz = pos.getZ(j);
       
-      // Adjust all vertices except the very start (inner ring connection)
-      if (px > -spokeLength / 2 + 0.01) {
-        // Calculate the current distance from center for angle calculation
-        const currentR = outerRadius + (px + spokeLength / 2);
-        const localAngle = angle + Math.atan2(pz, currentR);
-        
-        const localDisp = getDisplacementAt(localAngle, yPos + py, params);
-        const localOuterR = baseRadiusAtZ + localDisp;
-        const localInnerR = localOuterR - wallThicknessCm;
-        
-        // Absolute limit to prevent any protrusion (Corner-Safe)
-        const absoluteLimitR = localOuterR - safetyMarginCm;
-        const fusionTargetR = localInnerR + fuseDepthCm;
-        
-        // The distance from center 'd' must satisfy: d^2 = r_axis^2 + pz^2 <= absoluteLimitR^2
-        // So r_axis <= sqrt(absoluteLimitR^2 - pz^2)
-        const maxRAxis = Math.sqrt(Math.max(0, Math.pow(absoluteLimitR, 2) - Math.pow(pz, 2)));
-        
-        // We want to reach fusionTargetR if possible, but never exceed maxRAxis
-        const targetRAxis = Math.min(fusionTargetR, maxRAxis);
-        
-        // Set the new X position (relative to box center)
-        pos.setX(j, targetRAxis - outerRadius - spokeLength / 2);
+      // Calculate radial distance from center (Y-axis)
+      const currentR = Math.sqrt(vx * vx + vz * vz);
+      const currentAngle = Math.atan2(vz, vx);
+      
+      // Get the organic wall boundaries at this specific vertex's height and angle
+      const localDisp = getDisplacementAt(currentAngle, vy, params);
+      const localOuterR = getRadiusAtHeight(vy, params) + localDisp;
+      const localInnerR = localOuterR - wallThicknessCm;
+      
+      // Absolute safety limit: never exceed outer wall minus margin
+      const absoluteLimitR = localOuterR - safetyMarginCm;
+      const targetFusionR = localInnerR + fuseDepthCm;
+      
+      // Clamp the vertex radius
+      const safeR = Math.min(targetFusionR, absoluteLimitR);
+      
+      // If the vertex is part of the "outer" end of the spoke, pull it back
+      if (currentR > outerRadius + 0.01) {
+        const factor = safeR / currentR;
+        // Only pull back, never push out beyond the original box length
+        if (factor < 1.0) {
+          pos.setX(j, vx * factor);
+          pos.setZ(j, vz * factor);
+        }
       }
     }
     
-    spoke.translate(outerRadius + spokeLength / 2, yPos, 0);
-    spoke.rotateY(angle);
     geoms.push(spoke);
   }
   
