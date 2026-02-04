@@ -386,15 +386,12 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
 }
 
 function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
-  const { fitterType, fitterDiameter, fitterHeight, height } = params;
+  const { fitterType, fitterDiameter, fitterHeight, height, thickness } = params;
   const geoms: THREE.BufferGeometry[] = [];
   const fitterRadius = fitterDiameter / 20; 
   
-  // Calculate yPos based on fitterHeight offset from top
   const yPos = height / 2 - fitterHeight;
-  
-  // Get the actual radius of the lampshade at this specific height
-  const actualRadius = getRadiusAtHeight(yPos, params);
+  const baseRadius = getRadiusAtHeight(yPos, params);
   
   const ring = new THREE.TorusGeometry(fitterRadius, 0.15, 8, 32);
   ring.rotateX(Math.PI / 2);
@@ -404,10 +401,36 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
   const spokeCount = fitterType === 'spider' ? 3 : 4;
   for (let i = 0; i < spokeCount; i++) {
     const angle = (i / spokeCount) * Math.PI * 2;
-    // Spoke length is the distance from the fitter ring to the lampshade wall
-    const spokeLength = actualRadius - fitterRadius;
+    
+    // Calculate the radius at this specific angle, accounting for patterns
+    let displacedRadius = baseRadius;
+    const normY = (yPos + height / 2) / height;
+    
+    if (params.type === 'ribbed_drum') {
+      const count = params.ribCount || 20;
+      const depth = params.ribDepth || 0.5;
+      displacedRadius = baseRadius * (1 + Math.sin(angle * count) * (depth / baseRadius));
+    } else if (params.type === 'wave_shell') {
+      const amp = params.amplitude || 0.5;
+      const freq = params.frequency || 8;
+      displacedRadius = baseRadius + Math.sin(angle * freq + normY * Math.PI * 2) * amp;
+    } else if (params.type === 'organic_cell' || params.type === 'perlin_noise') {
+      const strength = params.noiseStrength || 0.4;
+      const scale = params.noiseScale || 2.0;
+      const noise = (
+        pseudoNoise(Math.cos(angle) * scale, yPos * scale, Math.sin(angle) * scale, params.seed) * 0.6 +
+        pseudoNoise(Math.cos(angle) * scale * 2, yPos * scale * 2, Math.sin(angle) * scale * 2, params.seed) * 0.4
+      ) * strength;
+      displacedRadius = baseRadius + noise;
+    }
+    
+    // Spoke should end at the inner wall (displacedRadius - thickness)
+    // We subtract a tiny bit more (0.05cm = 0.5mm) to ensure it doesn't poke through
+    const targetRadius = displacedRadius - thickness - 0.05;
+    const spokeLength = Math.max(0.1, targetRadius - fitterRadius);
+    
     const spoke = new THREE.BoxGeometry(spokeLength, 0.15, 0.3);
-    // Position the spoke so it starts at the fitter ring and ends at the wall
+    // Position the spoke so it starts at the fitter ring and ends at the inner wall
     spoke.translate(fitterRadius + spokeLength / 2, yPos, 0);
     spoke.rotateY(angle);
     geoms.push(spoke);
