@@ -8,7 +8,7 @@ import { LampshadeParams, LampshadeType, SilhouetteType } from '@/utils/geometry
 import { STLExporter } from 'three/examples/jsm/exporters/STLExporter.js';
 import * as THREE from 'three';
 import { showSuccess, showError } from '@/utils/toast';
-import { Ruler, Image as ImageIcon, Box, Lightbulb, ChevronRight } from 'lucide-react';
+import { Ruler, Image as ImageIcon, Box, Lightbulb, ChevronRight, Weight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const DEFAULT_PARAMS: LampshadeParams = {
@@ -63,6 +63,13 @@ const Index = () => {
 
   const handleSceneReady = (scene: THREE.Scene, mesh: THREE.Mesh) => {
     meshRef.current = mesh;
+  };
+
+  const estimateWeight = () => {
+    const avgRadius = (params.topRadius + params.bottomRadius) / 2;
+    const surfaceArea = 2 * Math.PI * avgRadius * params.height;
+    const volume = surfaceArea * (params.thickness / 10); 
+    return (volume * 1.24).toFixed(1); 
   };
 
   const handleExport = () => {
@@ -170,6 +177,12 @@ const Index = () => {
                 <div className="flex justify-between gap-8">
                   <span className="text-[10px] text-slate-400 font-bold uppercase">Diameter</span>
                   <span className="text-[10px] font-mono text-white">{(Math.max(params.topRadius, params.bottomRadius) * 20).toFixed(1)}mm</span>
+                </div>
+                <div className="flex justify-between gap-8 pt-1 border-t border-white/5 mt-1">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase flex items-center gap-1">
+                    <Weight className="w-2.5 h-2.5" /> Weight
+                  </span>
+                  <span className="text-[10px] font-mono text-indigo-300">{estimateWeight()}g</span>
                 </div>
               </div>
             </div>

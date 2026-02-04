@@ -76,13 +76,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
     setParams({ ...params, [key]: value });
   };
 
-  const estimateWeight = () => {
-    const avgRadius = (params.topRadius + params.bottomRadius) / 2;
-    const surfaceArea = 2 * Math.PI * avgRadius * params.height;
-    const volume = surfaceArea * (params.thickness / 10); 
-    return (volume * 1.24).toFixed(1); 
-  };
-
   return (
     <div className="flex flex-col gap-6 p-6 bg-white rounded-2xl border border-slate-200 shadow-xl h-full overflow-y-auto">
       <div className="flex items-center justify-between">
@@ -104,11 +97,10 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
       </div>
 
       <Tabs defaultValue="shape" className="w-full">
-        <TabsList className="grid grid-cols-5 w-full h-10 bg-slate-50 p-1 rounded-xl border border-slate-100">
+        <TabsList className="grid grid-cols-4 w-full h-10 bg-slate-50 p-1 rounded-xl border border-slate-100">
           <TabsTrigger value="shape" className="text-[9px] font-black uppercase tracking-widest rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Shape</TabsTrigger>
           <TabsTrigger value="pattern" className="text-[9px] font-black uppercase tracking-widest rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Pattern</TabsTrigger>
           <TabsTrigger value="build" className="text-[9px] font-black uppercase tracking-widest rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Build</TabsTrigger>
-          <TabsTrigger value="pro" className="text-[9px] font-black uppercase tracking-widest rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Pro</TabsTrigger>
           <TabsTrigger value="history" className="text-[9px] font-black uppercase tracking-widest rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm"><History className="w-3.5 h-3.5" /></TabsTrigger>
         </TabsList>
 
@@ -197,6 +189,19 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
         <TabsContent value="build" className="space-y-6 pt-6">
           <div className="space-y-6">
+            <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center">
+                  <ShieldAlert className="w-4 h-4 text-red-600" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-xs font-black uppercase tracking-widest text-slate-700">Printability</span>
+                  <span className="text-[9px] text-slate-400 font-bold uppercase">Overhang Analysis</span>
+                </div>
+              </div>
+              <Switch checked={showPrintability} onCheckedChange={setShowPrintability} />
+            </div>
+
             <div className="space-y-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
               <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
                 <span className="flex items-center gap-2"><Layers className="w-3.5 h-3.5" /> Wall Thickness</span>
@@ -259,31 +264,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 </div>
               </div>
             )}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="pro" className="space-y-6 pt-6">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center">
-                  <ShieldAlert className="w-4 h-4 text-red-600" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-xs font-black uppercase tracking-widest text-slate-700">Printability</span>
-                  <span className="text-[9px] text-slate-400 font-bold uppercase">Overhang Analysis</span>
-                </div>
-              </div>
-              <Switch checked={showPrintability} onCheckedChange={setShowPrintability} />
-            </div>
-            
-            <div className="p-4 brand-gradient rounded-2xl shadow-lg shadow-indigo-100 flex items-center justify-between text-white">
-              <div className="flex items-center gap-3">
-                <Weight className="w-4 h-4 opacity-80" />
-                <span className="text-xs font-black uppercase tracking-widest">Est. Weight</span>
-              </div>
-              <span className="text-sm font-mono font-black">{estimateWeight()}g</span>
-            </div>
           </div>
         </TabsContent>
 
