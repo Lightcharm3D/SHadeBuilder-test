@@ -15,6 +15,7 @@ export type LampshadeType =
 
 export type SilhouetteType = 'straight' | 'hourglass' | 'bell' | 'convex' | 'concave';
 export type FitterType = 'none' | 'spider' | 'uno';
+export type PatternType = 'none' | 'stars' | 'hearts' | 'hexagons' | 'dots';
 
 export interface LampshadeParams {
   type: LampshadeType;
@@ -34,6 +35,11 @@ export interface LampshadeParams {
   fitterType: FitterType;
   fitterDiameter: number;
   fitterHeight: number;
+  
+  // Pattern params
+  patternType: PatternType;
+  patternScale: number;
+  patternDensity: number;
   
   // Type-specific params
   ribCount?: number;
@@ -59,7 +65,7 @@ function pseudoNoise(x: number, y: number, seed: number) {
 }
 
 export function generateLampshadeGeometry(params: LampshadeParams): THREE.BufferGeometry {
-  const { type, silhouette, height, topRadius, bottomRadius, segments, seed, thickness } = params;
+  const { type, silhouette, height, topRadius, bottomRadius, segments, seed, thickness, patternType } = params;
   
   const getProfilePoints = (steps = 60, offset = 0) => {
     const points = [];
@@ -90,19 +96,17 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
   let geometry: THREE.BufferGeometry;
   const profile = getProfilePoints();
 
+  // Base Geometry Generation
   switch (type) {
     case 'double_wall': {
       const gap = params.gapDistance || 0.5;
       const outerProfile = getProfilePoints(60, 0);
       const innerProfile = getProfilePoints(60, -gap);
-      
       const outerGeom = new THREE.LatheGeometry(outerProfile, segments);
       const innerGeom = new THREE.LatheGeometry(innerProfile, segments);
-      
       geometry = BufferGeometryUtils.mergeGeometries([outerGeom, innerGeom]);
       break;
     }
-
     case 'origami': {
       const folds = params.foldCount || 12;
       const depth = params.foldDepth || 0.8;
@@ -121,7 +125,6 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       }
       break;
     }
-
     case 'slotted': {
       const count = params.slotCount || 16;
       const width = params.slotWidth || 0.2;
@@ -141,18 +144,9 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
         finGeom.rotateY(angle);
         geoms.push(finGeom);
       }
-      const ringTop = new THREE.TorusGeometry(topRadius, width, 8, segments);
-      ringTop.rotateX(Math.PI / 2);
-      ringTop.translate(0, height / 2, 0);
-      geoms.push(ringTop);
-      const ringBottom = new THREE.TorusGeometry(bottomRadius, width, 8, segments);
-      ringBottom.rotateX(Math.PI / 2);
-      ringBottom.translate(0, -height / 2, 0);
-      geoms.push(ringBottom);
       geometry = BufferGeometryUtils.mergeGeometries(geoms);
       break;
     }
-
     case 'voronoi': {
       const cells = params.cellCount || 12;
       geometry = new THREE.LatheGeometry(profile, segments);
@@ -177,7 +171,6 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       }
       break;
     }
-
     case 'wave_shell': {
       const amp = params.amplitude || 0.5;
       const freq = params.frequency || 8;
@@ -197,30 +190,6 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       }
       break;
     }
-
-    case 'perlin_noise': {
-      const strength = params.noiseStrength || 0.4;
-      const scale = params.noiseScale || 2.0;
-      geometry = new THREE.LatheGeometry(profile, segments);
-      const pos = geometry.attributes.position;
-      for (let i = 0; i < pos.count; i++) {
-        const px = pos.getX(i);
-        const py = pos.getY(i);
-        const pz = pos.getZ(i);
-        const angle = Math.atan2(pz, px);
-        const normY = (py + height / 2) / height;
-        const noise = (
-          pseudoNoise(angle * scale, normY * scale, seed) * 1.0 +
-          pseudoNoise(angle * scale * 2, normY * scale * 2, seed) * 0.5
-        ) * strength;
-        const r = Math.sqrt(px * px + pz * pz);
-        const factor = (r + noise) / r;
-        pos.setX(i, px * factor);
-        pos.setZ(i, pz * factor);
-      }
-      break;
-    }
-
     case 'ribbed_drum': {
       const count = params.ribCount || 20;
       const depth = params.ribDepth || 0.5;
@@ -237,7 +206,6 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       }
       break;
     }
-    
     case 'spiral_twist': {
       const twist = (params.twistAngle || 360) * (Math.PI / 180);
       geometry = new THREE.LatheGeometry(profile, segments);
@@ -254,13 +222,11 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       }
       break;
     }
-
     case 'geometric_poly': {
       const sides = params.sides || 6;
       geometry = new THREE.CylinderGeometry(topRadius, bottomRadius, height, sides, 1, true);
       break;
     }
-
     case 'lattice': {
       const density = params.gridDensity || 12;
       const geoms: THREE.BufferGeometry[] = [];
@@ -273,22 +239,58 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
         strut.rotateY(angle);
         geoms.push(strut);
       }
-      const ringCount = Math.floor(height / 2);
-      for (let i = 0; i <= ringCount; i++) {
-        const t = i / ringCount;
-        const r = topRadius + (bottomRadius - topRadius) * t;
-        const y = -height / 2 + height * t;
-        const ring = new THREE.TorusGeometry(r, thickness, 6, segments);
-        ring.rotateX(Math.PI / 2);
-        ring.translate(0, y, 0);
-        geoms.push(ring);
-      }
       geometry = BufferGeometryUtils.mergeGeometries(geoms);
       break;
     }
-    
     default:
       geometry = new THREE.LatheGeometry(profile, segments);
+  }
+
+  // Apply Pattern Cutouts
+  if (patternType !== 'none') {
+    const pos = geometry.attributes.position;
+    const scale = params.patternScale || 1.0;
+    const density = params.patternDensity || 5.0;
+    
+    for (let i = 0; i < pos.count; i++) {
+      const px = pos.getX(i);
+      const py = pos.getY(i);
+      const pz = pos.getZ(i);
+      const angle = Math.atan2(pz, px);
+      const normY = (py + height / 2) / height;
+      
+      let isCutout = false;
+      const u = (angle / (Math.PI * 2)) * density;
+      const v = normY * density;
+      
+      const localU = u % 1.0;
+      const localV = v % 1.0;
+      const dist = Math.sqrt(Math.pow(localU - 0.5, 2) + Math.pow(localV - 0.5, 2));
+      
+      switch (patternType) {
+        case 'stars':
+          const starAngle = Math.atan2(localV - 0.5, localU - 0.5);
+          const starR = 0.2 * (1 + Math.sin(starAngle * 5) * 0.5) * scale;
+          if (dist < starR) isCutout = true;
+          break;
+        case 'hearts':
+          const hX = (localU - 0.5) * 2.5 / scale;
+          const hY = (localV - 0.5) * 2.5 / scale;
+          if (Math.pow(hX * hX + hY * hY - 0.1, 3) - hX * hX * Math.pow(hY, 3) < 0) isCutout = true;
+          break;
+        case 'hexagons':
+          if (dist < 0.3 * scale) isCutout = true;
+          break;
+        case 'dots':
+          if (dist < 0.2 * scale) isCutout = true;
+          break;
+      }
+      
+      if (isCutout) {
+        // Move vertex inward to create a "hole" effect or just scale it to 0
+        pos.setXYZ(i, px * 0.01, py, pz * 0.01);
+      }
+    }
   }
 
   if (params.internalRibs > 0) {
