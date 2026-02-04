@@ -317,7 +317,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
 }
 
 function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
-  const { fitterType, fitterDiameter, fitterHeight, height, type, sides = 6 } = params;
+  const { fitterType, fitterDiameter, fitterHeight, height, thickness, type, sides = 6 } = params;
   const geoms: THREE.BufferGeometry[] = [];
   const fitterRadius = fitterDiameter / 20; 
   const yPos = height / 2 - fitterHeight;
@@ -335,7 +335,6 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
   geoms.push(ring);
   
   const spokeCount = fitterType === 'spider' ? 3 : 4;
-  const SURFACE_BUFFER = 0.02; // 0.2mm buffer to prevent poking through the outer surface
 
   for (let i = 0; i < spokeCount; i++) {
     let angle = (i / spokeCount) * Math.PI * 2;
@@ -346,8 +345,9 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
     }
 
     const disp = getDisplacementAt(angle, yPos, params);
-    // Target radius is just inside the outer surface
-    const targetRadius = baseRadius + disp - SURFACE_BUFFER;
+    // Target radius is exactly in the middle of the wall thickness
+    // This ensures a solid connection without poking through the outer skin
+    const targetRadius = (baseRadius + disp) - (thickness * 0.5);
     const spokeLength = Math.max(0.1, targetRadius - fitterRadius);
     
     const spoke = new THREE.BoxGeometry(spokeLength, 0.2, 0.3);
