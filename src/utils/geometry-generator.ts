@@ -334,9 +334,9 @@ function generateLithophaneLampshade(params: LampshadeParams): THREE.BufferGeome
     additionalGeometries.push(baseGeometry);
   }
   
-  // Add clamp interface
+  // Add clamp interface at the TOP of the lampshade
   if (cylinderDiameter > 0 && ledgeDiameter > 0) {
-    // Main cylinder
+    // Main cylinder (the part that connects to the light bulb)
     const mainCylinder = new THREE.CylinderGeometry(
       cylinderDiameter / 2, 
       cylinderDiameter / 2, 
@@ -346,7 +346,7 @@ function generateLithophaneLampshade(params: LampshadeParams): THREE.BufferGeome
     mainCylinder.translate(0, height / 2 + ledgeHeight / 2, 0);
     additionalGeometries.push(mainCylinder);
     
-    // Ledge
+    // Ledge (the part that holds the lampshade)
     const ledge = new THREE.CylinderGeometry(
       ledgeDiameter / 2, 
       ledgeDiameter / 2, 
@@ -356,7 +356,7 @@ function generateLithophaneLampshade(params: LampshadeParams): THREE.BufferGeome
     ledge.translate(0, height / 2 + ledgeHeight - cylinderThickness / 2, 0);
     additionalGeometries.push(ledge);
     
-    // Spokes
+    // Spokes (support structures)
     const spokeCount = 4;
     for (let i = 0; i < spokeCount; i++) {
       const angle = (i / spokeCount) * Math.PI * 2;
