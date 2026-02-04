@@ -1,13 +1,15 @@
 "use client";
 
 import React, { useState, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import LampshadeViewport from '@/components/LampshadeViewport';
 import ControlPanel from '@/components/ControlPanel';
 import { LampshadeParams, LampshadeType } from '@/utils/geometry-generator';
 import { STLExporter } from 'three/examples/jsm/exporters/STLExporter.js';
 import * as THREE from 'three';
 import { showSuccess, showError } from '@/utils/toast';
-import { Box, Layers, Zap, Ruler } from 'lucide-react';
+import { Box, Layers, Zap, Ruler, Image as ImageIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const Index = () => {
   const [params, setParams] = useState<LampshadeParams>({
@@ -111,14 +113,22 @@ const Index = () => {
           </div>
         </div>
         
-        <div className="hidden md:flex items-center gap-6">
-          <div className="flex items-center gap-2 text-sm text-slate-600">
-            <Box className="w-4 h-4" />
-            <span>E27 Compatible</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm text-slate-600">
-            <Layers className="w-4 h-4" />
-            <span>3D Print Ready</span>
+        <div className="flex items-center gap-4">
+          <Link to="/lithophane">
+            <Button variant="outline" size="sm" className="gap-2 border-indigo-100 text-indigo-600 hover:bg-indigo-50">
+              <ImageIcon className="w-4 h-4" />
+              Lithophane Generator
+            </Button>
+          </Link>
+          <div className="hidden md:flex items-center gap-6 ml-4">
+            <div className="flex items-center gap-2 text-sm text-slate-600">
+              <Box className="w-4 h-4" />
+              <span>E27 Compatible</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-slate-600">
+              <Layers className="w-4 h-4" />
+              <span>3D Print Ready</span>
+            </div>
           </div>
         </div>
       </header>
