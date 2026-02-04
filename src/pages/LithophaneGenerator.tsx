@@ -27,14 +27,22 @@ const LithophaneGenerator = () => {
     hasHole: false,
     holeSize: 3,
   });
-
+  
   const [imageData, setImageData] = useState<ImageData | null>(null);
   const [geometry, setGeometry] = useState<THREE.BufferGeometry | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    
+    // Create image preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setImagePreview(e.target?.result as string);
+    };
+    reader.readAsDataURL(file);
 
     try {
       setIsProcessing(true);
@@ -78,7 +86,6 @@ const LithophaneGenerator = () => {
       showError("Please upload an image first");
       return;
     }
-
     try {
       const exporter = new STLExporter();
       const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial());
@@ -112,38 +119,64 @@ const LithophaneGenerator = () => {
           </div>
         </div>
       </header>
-
+      
       <main className="flex-1 flex flex-col md:flex-row p-4 md:p-6 gap-6 overflow-hidden">
         <div className="flex-1 relative min-h-[400px] bg-slate-950 rounded-xl shadow-2xl border border-slate-800">
           <LithophaneViewport geometry={geometry} />
           
-          {!imageData && (
+          {!imageData && !imagePreview && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="bg-slate-900/80 backdrop-blur-md p-8 rounded-3xl border border-slate-700 text-center max-w-md">
                 <div className="w-16 h-16 bg-indigo-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
                   <ImageIcon className="w-8 h-8 text-indigo-400" />
                 </div>
                 <h3 className="text-white font-bold text-xl mb-2">Custom Shape Studio</h3>
-                <p className="text-slate-400 text-sm leading-relaxed">Upload a photo and choose a shape. Perfect for keychains, ornaments, and personalized gifts.</p>
+                <p className="text-slate-400 text-sm leading-relaxed">
+                  Upload a photo and choose a shape. Perfect for keychains, ornaments, and personalized gifts.
+                </p>
+              </div>
+            </div>
+          )}
+          
+          {imagePreview && !imageData && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="bg-slate-800/90 backdrop-blur-sm p-6 rounded-xl border border-slate-700">
+                <div className="relative">
+                  <img 
+                    src={imagePreview} 
+                    alt="Preview" 
+                    className="max-h-[300px] max-w-full rounded-lg object-contain"
+                  />
+                  {isProcessing && (
+                    <div className="absolute inset-0 bg-slate-900/70 flex items-center justify-center rounded-lg">
+                      <div className="text-white text-center">
+                        <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500 mb-2"></div>
+                        <p>Processing image...</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}
         </div>
-
+        
         <div className="w-full md:w-[380px] shrink-0">
           <LithophaneControls 
             params={params} 
             setParams={setParams} 
-            onImageUpload={handleImageUpload}
-            onExport={handleExport}
-            onApplyPreset={handleApplyPreset}
-            isProcessing={isProcessing}
+            onImageUpload={handleImageUpload} 
+            onExport={handleExport} 
+            onApplyPreset={handleApplyPreset} 
+            isProcessing={isProcessing} 
           />
         </div>
       </main>
-
+      
       <footer className="py-4 border-t border-slate-200 bg-white text-center">
-        <p className="text-xs text-slate-400">© {new Date().getFullYear()} LightCharm 3D. Optimized for FDM & Resin Printing.</p>
+        <p className="text-xs text-slate-400">
+          © {new Date().getFullYear()} LightCharm 3D. Optimized for FDM & Resin Printing.
+        </p>
       </footer>
     </div>
   );
