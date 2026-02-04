@@ -137,28 +137,6 @@ const LithophaneGenerator = () => {
               </div>
             </div>
           )}
-          
-          {imagePreview && !imageData && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="bg-slate-800/90 backdrop-blur-sm p-6 rounded-xl border border-slate-700">
-                <div className="relative">
-                  <img 
-                    src={imagePreview} 
-                    alt="Preview" 
-                    className="max-h-[300px] max-w-full rounded-lg object-contain"
-                  />
-                  {isProcessing && (
-                    <div className="absolute inset-0 bg-slate-900/70 flex items-center justify-center rounded-lg">
-                      <div className="text-white text-center">
-                        <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500 mb-2"></div>
-                        <p>Processing image...</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
         </div>
         
         <div className="w-full md:w-[380px] shrink-0">
@@ -169,6 +147,7 @@ const LithophaneGenerator = () => {
             onExport={handleExport} 
             onApplyPreset={handleApplyPreset} 
             isProcessing={isProcessing} 
+            imagePreview={imagePreview}
           />
         </div>
       </main>
