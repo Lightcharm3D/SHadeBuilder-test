@@ -132,8 +132,12 @@ const Index = () => {
         <div className="flex items-center gap-3 lg:gap-6">
           <div className="relative group">
             <div className="absolute -inset-1 lg:-inset-2 brand-gradient rounded-xl lg:rounded-2xl blur-lg opacity-20 group-hover:opacity-40 transition duration-500"></div>
-            <div className="relative w-10 h-10 lg:w-12 lg:h-12 brand-gradient rounded-xl lg:rounded-2xl flex items-center justify-center text-white shadow-xl transform group-hover:scale-105 transition-transform duration-300">
-              <Cpu className="w-5 h-5 lg:w-6 lg:h-6" />
+            <div className="relative w-10 h-10 lg:w-12 lg:h-12 rounded-xl lg:rounded-2xl overflow-hidden shadow-xl transform group-hover:scale-105 transition-transform duration-300">
+              <img 
+                src="/logo.png" 
+                alt="Logo" 
+                className="w-full h-full object-cover"
+              />
             </div>
           </div>
           <div>
@@ -185,8 +189,8 @@ const Index = () => {
                   exit={{ scale: 0.9, opacity: 0, y: 20 }}
                   className="bg-slate-900/80 backdrop-blur-3xl p-8 lg:p-12 rounded-[2.5rem] lg:rounded-[3.5rem] border border-white/10 text-center max-w-xs lg:max-w-sm shadow-[0_0_100px_rgba(99,102,241,0.2)] mx-4"
                 >
-                  <div className="w-16 h-16 bg-indigo-500/20 rounded-[1.5rem] flex items-center justify-center mx-auto mb-6 shadow-inner">
-                    <Sparkles className="w-8 h-8 text-indigo-400" />
+                  <div className="w-24 h-24 bg-indigo-500/20 rounded-[1.5rem] overflow-hidden flex items-center justify-center mx-auto mb-6 shadow-inner">
+                    <img src="/logo.png" alt="Welcome Logo" className="w-full h-full object-cover" />
                   </div>
                   <h3 className="text-white font-black text-xl lg:text-2xl mb-3 tracking-tight">Ready to Design</h3>
                   <p className="text-slate-400 text-xs lg:text-sm leading-relaxed mb-8">
