@@ -34,8 +34,14 @@ const LithophaneControls: React.FC<LithophaneControlsProps> = ({
   imageData
 }) => {
   const updateParam = (key: keyof LithophaneParams, value: any) => {
-    const roundedValue = typeof value === 'number' ? parseFloat(value.toFixed(2)) : value;
-    setParams({ ...params, [key]: roundedValue });
+    let finalValue = typeof value === 'number' ? parseFloat(value.toFixed(2)) : value;
+    
+    // Strict boundary clamping for build plate (200x200mm)
+    if (key === 'width' || key === 'height') {
+      finalValue = Math.min(20, Math.max(1, finalValue));
+    }
+
+    setParams({ ...params, [key]: finalValue });
   };
 
   const fixAspectRatio = () => {
@@ -187,11 +193,11 @@ const LithophaneControls: React.FC<LithophaneControlsProps> = ({
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1">
               <Label className="text-[9px]">Width (cm)</Label>
-              <Input type="number" step={0.01} value={params.width.toFixed(2)} onChange={(e) => updateParam('width', parseFloat(e.target.value))} className="h-8 text-xs" />
+              <Input type="number" step={0.01} max={20} value={params.width.toFixed(2)} onChange={(e) => updateParam('width', parseFloat(e.target.value))} className="h-8 text-xs" />
             </div>
             <div className="space-y-1">
               <Label className="text-[9px]">Height (cm)</Label>
-              <Input type="number" step={0.01} value={params.height.toFixed(2)} onChange={(e) => updateParam('height', parseFloat(e.target.value))} className="h-8 text-xs" />
+              <Input type="number" step={0.01} max={20} value={params.height.toFixed(2)} onChange={(e) => updateParam('height', parseFloat(e.target.value))} className="h-8 text-xs" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2">

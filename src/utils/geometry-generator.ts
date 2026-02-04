@@ -391,6 +391,22 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       geometry = new THREE.LatheGeometry(closedProfile, segments);
   }
 
+  // Final safety clamp for all vertices to stay within 10cm radius (200mm diameter)
+  const pos = geometry.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    const px = pos.getX(i);
+    const py = pos.getY(i);
+    const pz = pos.getZ(i);
+    const r = Math.sqrt(px * px + pz * pz);
+    if (r > 10) {
+      const factor = 10 / r;
+      pos.setX(i, px * factor);
+      pos.setZ(i, pz * factor);
+    }
+    // Clamp height to 20cm build volume
+    pos.setY(i, Math.max(-10, Math.min(10, py)));
+  }
+
   if (params.internalRibs > 0) {
     const ribGeoms: THREE.BufferGeometry[] = [];
     for (let i = 0; i < params.internalRibs; i++) {

@@ -82,8 +82,17 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   };
 
   const updateParam = (key: keyof LampshadeParams, value: any) => {
-    const roundedValue = typeof value === 'number' ? parseFloat(value.toFixed(2)) : value;
-    setParams({ ...params, [key]: roundedValue });
+    let finalValue = typeof value === 'number' ? parseFloat(value.toFixed(2)) : value;
+    
+    // Strict boundary clamping for build plate (200x200mm)
+    if (key === 'topRadius' || key === 'bottomRadius') {
+      finalValue = Math.min(9.8, Math.max(0.1, finalValue)); // Leave 2mm safety margin
+    }
+    if (key === 'height') {
+      finalValue = Math.min(20, Math.max(1, finalValue));
+    }
+
+    setParams({ ...params, [key]: finalValue });
   };
 
   const updateMaterial = (key: keyof MaterialParams, value: any) => {
@@ -199,11 +208,11 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           <div className="grid grid-cols-2 gap-5">
             <div className="space-y-3">
               <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Height (cm)</Label>
-              <Input type="number" step={0.01} value={params.height.toFixed(2)} onChange={(e) => updateParam('height', parseFloat(e.target.value) || 0)} className="h-12 text-xs font-mono font-bold bg-slate-50 rounded-2xl border-slate-200 focus:ring-indigo-500" />
+              <Input type="number" step={0.01} max={20} value={params.height.toFixed(2)} onChange={(e) => updateParam('height', parseFloat(e.target.value) || 0)} className="h-12 text-xs font-mono font-bold bg-slate-50 rounded-2xl border-slate-200 focus:ring-indigo-500" />
             </div>
             <div className="space-y-3">
               <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Top Radius</Label>
-              <Input type="number" step={0.01} value={params.topRadius.toFixed(2)} onChange={(e) => updateParam('topRadius', parseFloat(e.target.value) || 0)} className="h-12 text-xs font-mono font-bold bg-slate-50 rounded-2xl border-slate-200 focus:ring-indigo-500" />
+              <Input type="number" step={0.01} max={9.8} value={params.topRadius.toFixed(2)} onChange={(e) => updateParam('topRadius', parseFloat(e.target.value) || 0)} className="h-12 text-xs font-mono font-bold bg-slate-50 rounded-2xl border-slate-200 focus:ring-indigo-500" />
             </div>
           </div>
         </TabsContent>
