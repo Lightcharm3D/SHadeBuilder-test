@@ -34,6 +34,7 @@ export function generateLithophaneGeometry(
   } = params;
   
   const aspect = imageData.width / imageData.height;
+  // Increase grid density based on resolution parameter
   const gridX = Math.floor(resolution * aspect);
   const gridY = resolution;
   
@@ -69,28 +70,20 @@ export function generateLithophaneGeometry(
     }
   };
 
-  // Border boundary check - creates a frame around the shape
   const isInBorder = (u: number, v: number) => {
     if (!hasBorder) return false;
-    
     const x = u - 0.5;
     const y = v - 0.5;
-    
-    // Determine if point is in the border area (frame around the main shape)
     const outerLimit = 0.5;
-    const innerLimit = 0.5 - (borderThickness / Math.max(width, height) * 2);
+    const innerLimit = 0.5 - (borderThickness / Math.max(width, height) * 0.1);
     
     switch (type) {
       case 'circle':
         const dist = Math.sqrt(x * x + y * y);
-        const outerRadius = 0.5;
-        const innerRadius = 0.5 - (borderThickness / Math.max(width, height) * 2);
-        return dist <= outerRadius && dist >= innerRadius;
+        return dist <= 0.5 && dist >= (0.5 - (borderThickness / Math.max(width, height) * 0.1));
       default:
-        // For rectangular/other shapes
-        const inOuterBounds = Math.abs(x) <= outerLimit && Math.abs(y) <= outerLimit;
-        const inInnerBounds = Math.abs(x) <= innerLimit && Math.abs(y) <= innerLimit;
-        return inOuterBounds && !inInnerBounds;
+        return (Math.abs(x) <= outerLimit && Math.abs(y) <= outerLimit) && 
+               !(Math.abs(x) <= innerLimit && Math.abs(y) <= innerLimit);
     }
   };
 
@@ -118,7 +111,7 @@ export function generateLithophaneGeometry(
            (getPixelGray(x2, y2) * dx * dy);
   };
 
-  // 1. Generate Vertices (Front and Back)
+  // 1. Generate Vertices
   for (let j = 0; j < gridY; j++) {
     for (let i = 0; i < gridX; i++) {
       const u = i / (gridX - 1);
@@ -129,7 +122,7 @@ export function generateLithophaneGeometry(
 
       let thickness = baseThickness;
       if (inside) {
-        const bVal = inside ? getInterpolatedVal(u, v) : 0;
+        const bVal = getInterpolatedVal(u, v);
         thickness += minThickness + bVal * (maxThickness - minThickness);
       } else if (inBorder) {
         thickness += borderHeight;
@@ -137,8 +130,6 @@ export function generateLithophaneGeometry(
       
       const xPos = (u - 0.5) * width;
       const yPos = (v - 0.5) * height;
-
-      // Front vertex
       vertices.push(xPos, yPos, thickness);
     }
   }
@@ -150,12 +141,11 @@ export function generateLithophaneGeometry(
       const v = j / (gridY - 1);
       const xPos = (u - 0.5) * width;
       const yPos = (v - 0.5) * height;
-      // Back vertex (flat base)
       vertices.push(xPos, yPos, 0);
     }
   }
 
-  // 2. Generate Indices for Front and Back Faces
+  // 2. Generate Indices
   for (let j = 0; j < gridY - 1; j++) {
     for (let i = 0; i < gridX - 1; i++) {
       const a = j * gridX + i;
@@ -164,100 +154,52 @@ export function generateLithophaneGeometry(
       const d = (j + 1) * gridX + (i + 1);
 
       if (validPoints[a] && validPoints[b] && validPoints[c] && validPoints[d]) {
-        // Front face (CCW)
         indices.push(a, c, b);
         indices.push(b, c, d);
-        // Back face (CW to face outwards)
         indices.push(a + backOffset, b + backOffset, c + backOffset);
         indices.push(b + backOffset, d + backOffset, c + backOffset);
       }
     }
   }
 
-  // 3. Side Walls (Manifold closure) - Fixed to properly seal all edges
-  // Process all boundary edges including outer edges of the grid
+  // 3. Side Walls
   for (let j = 0; j < gridY; j++) {
     for (let i = 0; i < gridX; i++) {
       const idx = j * gridX + i;
-      
-      // Skip invalid points
       if (!validPoints[idx]) continue;
       
-      // Check left edge (i-1)
+      // Left
       if (i === 0 || !validPoints[idx - 1]) {
-        // Create left side wall
-        const frontLeft = idx;
-        const backLeft = idx + backOffset;
-        const frontBottomLeft = (j === gridY - 1) ? idx : (j + 1) * gridX + i;
-        const backBottomLeft = frontBottomLeft + backOffset;
-        
-        indices.push(frontLeft, backLeft, frontBottomLeft);
-        indices.push(backLeft, backBottomLeft, frontBottomLeft);
+        const nextJ = (j === gridY - 1) ? j : j + 1;
+        if (validPoints[nextJ * gridX + i]) {
+          const a = idx, b = idx + backOffset, c = nextJ * gridX + i, d = nextJ * gridX + i + backOffset;
+          indices.push(a, b, c); indices.push(b, d, c);
+        }
       }
-      
-      // Check right edge (i+1)
+      // Right
       if (i === gridX - 1 || !validPoints[idx + 1]) {
-        // Create right side wall
-        const frontRight = idx;
-        const backRight = idx + backOffset;
-        const frontBottomRight = (j === gridY - 1) ? idx : (j + 1) * gridX + i;
-        const backBottomRight = frontBottomRight + backOffset;
-        
-        indices.push(frontRight, frontBottomRight, backRight);
-        indices.push(backRight, frontBottomRight, backBottomRight);
+        const nextJ = (j === gridY - 1) ? j : j + 1;
+        if (validPoints[nextJ * gridX + i]) {
+          const a = idx, b = idx + backOffset, c = nextJ * gridX + i, d = nextJ * gridX + i + backOffset;
+          indices.push(a, c, b); indices.push(b, c, d);
+        }
       }
-      
-      // Check top edge (j-1)
+      // Top
       if (j === 0 || !validPoints[idx - gridX]) {
-        // Create top side wall
-        const frontTop = idx;
-        const backTop = idx + backOffset;
-        const frontTopRight = (i === gridX - 1) ? idx : idx + 1;
-        const backTopRight = frontTopRight + backOffset;
-        
-        indices.push(frontTop, frontTopRight, backTop);
-        indices.push(backTop, frontTopRight, backTopRight);
+        const nextI = (i === gridX - 1) ? i : i + 1;
+        if (validPoints[j * gridX + nextI]) {
+          const a = idx, b = idx + backOffset, c = j * gridX + nextI, d = j * gridX + nextI + backOffset;
+          indices.push(a, c, b); indices.push(b, c, d);
+        }
       }
-      
-      // Check bottom edge (j+1)
+      // Bottom
       if (j === gridY - 1 || !validPoints[idx + gridX]) {
-        // Create bottom side wall
-        const frontBottom = idx;
-        const backBottom = idx + backOffset;
-        const frontBottomRight = (i === gridX - 1) ? idx : idx + 1;
-        const backBottomRight = frontBottomRight + backOffset;
-        
-        indices.push(frontBottom, backBottom, frontBottomRight);
-        indices.push(backBottom, backBottomRight, frontBottomRight);
+        const nextI = (i === gridX - 1) ? i : i + 1;
+        if (validPoints[j * gridX + nextI]) {
+          const a = idx, b = idx + backOffset, c = j * gridX + nextI, d = j * gridX + nextI + backOffset;
+          indices.push(a, b, c); indices.push(b, d, c);
+        }
       }
-    }
-  }
-
-  // 4. Add bottom face to make it completely solid
-  const bottomVerticesStart = vertices.length / 3;
-  
-  // Add bottom vertices (same as back vertices but at z=0)
-  for (let j = 0; j < gridY; j++) {
-    for (let i = 0; i < gridX; i++) {
-      const u = i / (gridX - 1);
-      const v = j / (gridY - 1);
-      const xPos = (u - 0.5) * width;
-      const yPos = (v - 0.5) * height;
-      vertices.push(xPos, yPos, 0); // Bottom face at z=0
-    }
-  }
-
-  // Create bottom face indices
-  for (let j = 0; j < gridY - 1; j++) {
-    for (let i = 0; i < gridX - 1; i++) {
-      const a = j * gridX + i + bottomVerticesStart;
-      const b = j * gridX + (i + 1) + bottomVerticesStart;
-      const c = (j + 1) * gridX + i + bottomVerticesStart;
-      const d = (j + 1) * gridX + (i + 1) + bottomVerticesStart;
-
-      // Bottom face (CCW when viewed from below)
-      indices.push(a, b, c);
-      indices.push(b, d, c);
     }
   }
 
@@ -274,14 +216,16 @@ function applySmoothing(imageData: ImageData, radius: number): Uint8ClampedArray
   const width = imageData.width;
   const height = imageData.height;
   const r = Math.floor(radius);
-  for (let pass = 0; pass < 2; pass++) {
+  if (r <= 0) return data;
+
+  for (let pass = 0; pass < 1; pass++) {
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
         let rSum = 0, gSum = 0, bSum = 0, count = 0;
         for (let ky = -r; ky <= r; ky++) {
+          const py = Math.min(height - 1, Math.max(0, y + ky));
           for (let kx = -r; kx <= r; kx++) {
             const px = Math.min(width - 1, Math.max(0, x + kx));
-            const py = Math.min(height - 1, Math.max(0, y + ky));
             const idx = (py * width + px) * 4;
             rSum += data[idx]; gSum += data[idx + 1]; bSum += data[idx + 2];
             count++;

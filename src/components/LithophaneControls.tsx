@@ -4,11 +4,10 @@ import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
-import { LithophaneParams, LithophaneType } from '@/utils/lithophane-generator';
-import { Download, Image as ImageIcon, Sun, Contrast, Zap, Sparkles, Circle, Heart, Square, Frame } from 'lucide-react';
+import { LithophaneParams } from '@/utils/lithophane-generator';
+import { Download, Image as ImageIcon, Sun, Contrast, Zap, Sparkles, Circle, Heart, Square, Frame, Layers } from 'lucide-react';
 
 interface LithophaneControlsProps {
   params: LithophaneParams;
@@ -53,7 +52,6 @@ const LithophaneControls: React.FC<LithophaneControlsProps> = ({
             className="cursor-pointer file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" 
           />
           
-          {/* Image Preview */}
           {imagePreview && (
             <div className="mt-2 flex justify-center">
               <div className="relative border border-slate-200 rounded-lg overflow-hidden bg-slate-50">
@@ -105,6 +103,28 @@ const LithophaneControls: React.FC<LithophaneControlsProps> = ({
               <Heart className="w-3 h-3 mr-1" />
               Heart
             </Button>
+          </div>
+        </div>
+
+        <div className="space-y-3 p-3 bg-slate-50 rounded-lg border border-slate-100">
+          <Label className="text-[9px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-1">
+            <Layers className="w-2 h-2" />
+            Mesh Quality
+          </Label>
+          <div className="space-y-1">
+            <div className="flex justify-between text-[9px] font-medium">
+              <span>Resolution (Vertices)</span>
+              <span>{params.resolution}</span>
+            </div>
+            <Slider 
+              value={[params.resolution]} 
+              min={50} 
+              max={400} 
+              step={10} 
+              onValueChange={([v]) => updateParam('resolution', v)} 
+              className="py-1"
+            />
+            <p className="text-[8px] text-slate-400 italic">Higher values = more detail but slower processing</p>
           </div>
         </div>
 

@@ -19,11 +19,11 @@ const LithophaneGenerator = () => {
     maxThickness: 2.8,
     baseThickness: 0.8,
     curveRadius: 15,
-    resolution: 100, // Lower default for mobile performance
+    resolution: 200, // Increased default for better quality
     inverted: false,
     brightness: 0,
     contrast: 20,
-    smoothing: 1.5,
+    smoothing: 1.0,
     hasHole: false,
     holeSize: 3,
     hasBorder: false,
@@ -40,7 +40,6 @@ const LithophaneGenerator = () => {
     const file = e.target.files?.[0];
     if (!file) return;
     
-    // Create image preview
     const reader = new FileReader();
     reader.onload = (e) => {
       setImagePreview(e.target?.result as string);
@@ -63,16 +62,16 @@ const LithophaneGenerator = () => {
   const handleApplyPreset = useCallback((preset: string) => {
     switch (preset) {
       case 'portrait':
-        setParams({ ...params, width: 8, height: 10, resolution: 100, contrast: 30, smoothing: 1.0 });
+        setParams({ ...params, width: 8, height: 10, resolution: 250, contrast: 30, smoothing: 1.0 });
         break;
       case 'landscape':
-        setParams({ ...params, width: 15, height: 10, resolution: 100, contrast: 25, smoothing: 1.5 });
+        setParams({ ...params, width: 15, height: 10, resolution: 250, contrast: 25, smoothing: 1.5 });
         break;
       case 'keychain':
-        setParams({ ...params, width: 4, height: 4, resolution: 80, baseThickness: 1.2, maxThickness: 2.0, smoothing: 0.5, hasHole: true });
+        setParams({ ...params, width: 4, height: 4, resolution: 150, baseThickness: 1.2, maxThickness: 2.0, smoothing: 0.5, hasHole: true });
         break;
       case 'high_detail':
-        setParams({ ...params, resolution: 150, contrast: 40, smoothing: 0.5 });
+        setParams({ ...params, resolution: 350, contrast: 40, smoothing: 0.5 });
         break;
     }
     showSuccess(`Applied ${preset} preset`);
