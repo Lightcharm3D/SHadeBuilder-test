@@ -105,6 +105,23 @@ function getDisplacementAt(angle: number, y: number, params: LampshadeParams): n
       const segmentIndex = Math.round((angle / (Math.PI * 2)) * (folds * 2));
       return segmentIndex % 2 !== 0 ? -depth : 0;
     }
+    case 'voronoi': {
+      const cells = params.cellCount || 12;
+      const points: THREE.Vector3[] = [];
+      for (let i = 0; i < cells; i++) {
+        const a = pseudoNoise(i, 0, 0, seed) * Math.PI * 2;
+        const h = (pseudoNoise(0, i, 0, seed) - 0.5) * height;
+        const r = getRadiusAtHeight(h, params);
+        points.push(new THREE.Vector3(Math.cos(a) * r, h, Math.sin(a) * r));
+      }
+      const v = new THREE.Vector3(Math.cos(angle) * getRadiusAtHeight(y, params), y, Math.sin(angle) * getRadiusAtHeight(y, params));
+      let minDist = Infinity;
+      points.forEach(p => {
+        const d = v.distanceTo(p);
+        if (d < minDist) minDist = d;
+      });
+      return -Math.exp(-minDist * 0.5) * 1.5;
+    }
     default:
       return 0;
   }
@@ -136,8 +153,11 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     case 'organic_cell':
     case 'perlin_noise':
     case 'wave_shell':
+    case 'voronoi':
+    case 'origami':
     case 'ribbed_drum': {
-      geometry = new THREE.LatheGeometry(closedProfile, segments);
+      const segs = type === 'origami' ? (params.foldCount || 12) * 2 : segments;
+      geometry = new THREE.LatheGeometry(closedProfile, segs);
       const pos = geometry.attributes.position;
       for (let i = 0; i < pos.count; i++) {
         const px = pos.getX(i);
@@ -155,18 +175,19 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
 
     case 'slotted': {
       const count = params.slotCount || 16;
+      const finThick = params.slotWidth || thickness;
       const geoms: THREE.BufferGeometry[] = [];
       const coreOffset = 0.8; 
       
       const coreProfile = getClosedProfilePoints(40, thickness);
       const coreGeom = new THREE.LatheGeometry(coreProfile, segments);
-      coreGeom.scale(0.8, 1, 0.8); // Shrink core slightly
+      coreGeom.scale(0.8, 1, 0.8); 
       geoms.push(coreGeom);
 
       for (let i = 0; i < count; i++) {
         const angle = (i / count) * Math.PI * 2;
         const finDepth = coreOffset + 0.5; 
-        const finGeom = new THREE.BoxGeometry(finDepth, height, thickness, 1, 32, 1);
+        const finGeom = new THREE.BoxGeometry(finDepth, height, finThick, 1, 32, 1);
         const pos = finGeom.attributes.position;
         for (let j = 0; j < pos.count; j++) {
           const py = pos.getY(j);
@@ -182,16 +203,28 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       break;
     }
 
+    case 'double_wall': {
+      const gap = params.gapDistance || 0.5;
+      const outerGeom = new THREE.LatheGeometry(getClosedProfilePoints(60, thickness), segments);
+      const innerGeom = new THREE.LatheGeometry(getClosedProfilePoints(60, thickness), segments);
+      innerGeom.scale(1 - (gap / topRadius), 1, 1 - (gap / topRadius));
+      geometry = BufferGeometryUtils.mergeGeometries([outerGeom, innerGeom]);
+      break;
+    }
+
+    case 'geometric_poly': {
+      const sides = params.sides || 6;
+      geometry = new THREE.LatheGeometry(closedProfile, sides);
+      break;
+    }
+
     case 'lattice': {
       const density = params.gridDensity || 12;
       const geoms: THREE.BufferGeometry[] = [];
       const strutRadius = thickness / 2;
       
-      // Diamond Lattice (Criss-cross)
       for (let i = 0; i < density; i++) {
         const angle = (i / density) * Math.PI * 2;
-        
-        // Forward twist strut
         const strut1 = new THREE.CylinderGeometry(strutRadius, strutRadius, height * 1.1, 6, 32);
         const pos1 = strut1.attributes.position;
         for (let j = 0; j < pos1.count; j++) {
@@ -204,7 +237,6 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
         }
         geoms.push(strut1);
 
-        // Backward twist strut
         const strut2 = new THREE.CylinderGeometry(strutRadius, strutRadius, height * 1.1, 6, 32);
         const pos2 = strut2.attributes.position;
         for (let j = 0; j < pos2.count; j++) {
@@ -218,7 +250,6 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
         geoms.push(strut2);
       }
       
-      // Top and Bottom reinforcement rings
       const ringTop = new THREE.TorusGeometry(topRadius, strutRadius, 8, segments);
       ringTop.rotateX(Math.PI / 2);
       ringTop.translate(0, height / 2, 0);
@@ -266,8 +297,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
         const py = pos.getY(j);
         const r = getRadiusAtHeight(py, params) - thickness;
         const pz = pos.getZ(j);
-        // Ensure rib follows silhouette and stays inside
-        if (pz > 0) pos.setZ(j, r + 0.01); // Slight overlap for manifold
+        if (pz > 0) pos.setZ(j, r + 0.01); 
         else pos.setZ(j, r - ribDepth);
       }
       rib.rotateY(angle);
@@ -286,7 +316,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
 }
 
 function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
-  const { fitterType, fitterDiameter, fitterHeight, height, thickness } = params;
+  const { fitterType, fitterDiameter, fitterHeight, height, thickness, type, sides = 6 } = params;
   const geoms: THREE.BufferGeometry[] = [];
   const fitterRadius = fitterDiameter / 20; 
   const yPos = height / 2 - fitterHeight;
@@ -299,7 +329,14 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
   
   const spokeCount = fitterType === 'spider' ? 3 : 4;
   for (let i = 0; i < spokeCount; i++) {
-    const angle = (i / spokeCount) * Math.PI * 2;
+    let angle = (i / spokeCount) * Math.PI * 2;
+    
+    // For faceted shapes, align spokes to vertices for strength
+    if (type === 'geometric_poly') {
+      const step = (Math.PI * 2) / sides;
+      angle = Math.round(angle / step) * step;
+    }
+
     const disp = getDisplacementAt(angle, yPos, params);
     const targetRadius = baseRadius + disp - thickness - 0.05;
     const spokeLength = Math.max(0.1, targetRadius - fitterRadius);
