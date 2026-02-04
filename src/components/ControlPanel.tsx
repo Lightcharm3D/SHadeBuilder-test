@@ -27,7 +27,9 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   onRandomize 
 }) => {
   const updateParam = (key: keyof LampshadeParams, value: any) => {
-    setParams({ ...params, [key]: value });
+    // If it's a number, round to 2 decimal places
+    const finalValue = typeof value === 'number' ? Math.round(value * 100) / 100 : value;
+    setParams({ ...params, [key]: finalValue });
   };
 
   return (
@@ -81,7 +83,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
               type="number" 
               min={5} 
               max={50} 
-              step={0.1}
+              step={0.01}
               value={params.height} 
               onChange={(e) => updateParam('height', parseFloat(e.target.value) || 0)}
               className="bg-slate-50 border-slate-200"
@@ -95,7 +97,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 type="number" 
                 min={1} 
                 max={30} 
-                step={0.1}
+                step={0.01}
                 value={params.topRadius} 
                 onChange={(e) => updateParam('topRadius', parseFloat(e.target.value) || 0)}
                 className="bg-slate-50 border-slate-200"
@@ -107,7 +109,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 type="number" 
                 min={1} 
                 max={30} 
-                step={0.1}
+                step={0.01}
                 value={params.bottomRadius} 
                 onChange={(e) => updateParam('bottomRadius', parseFloat(e.target.value) || 0)}
                 className="bg-slate-50 border-slate-200"
@@ -135,7 +137,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 type="number" 
                 min={-720} 
                 max={720} 
-                step={1}
+                step={0.01}
                 value={params.twist} 
                 onChange={(e) => updateParam('twist', parseFloat(e.target.value) || 0)}
                 className="bg-slate-50 border-slate-200"
@@ -150,7 +152,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 type="number" 
                 min={1} 
                 max={100} 
-                step={1}
+                step={0.01}
                 value={params.density} 
                 onChange={(e) => updateParam('density', parseFloat(e.target.value) || 1)}
                 className="bg-slate-50 border-slate-200"
