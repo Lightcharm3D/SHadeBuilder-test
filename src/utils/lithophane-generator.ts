@@ -20,6 +20,10 @@ export interface LithophaneParams {
   hasBorder: boolean;
   borderThickness: number;
   borderHeight: number;
+  // Text Personalization
+  text?: string;
+  textSize?: number;
+  textY?: number;
 }
 
 export function generateLithophaneGeometry(
@@ -30,7 +34,8 @@ export function generateLithophaneGeometry(
     width, height, minThickness, maxThickness, 
     resolution, type, inverted,
     brightness, contrast, smoothing, hasHole, holeSize,
-    hasBorder, borderThickness, borderHeight, curveRadius
+    hasBorder, borderThickness, borderHeight, curveRadius,
+    text, textSize = 40, textY = 0.8
   } = params;
   
   const widthMm = width * 10;
@@ -39,34 +44,35 @@ export function generateLithophaneGeometry(
   const gridX = Math.floor(resolution * aspect);
   const gridY = resolution;
   
+  // Apply Text Overlay to Image Data if present
+  let finalImageData = imageData;
+  if (text && text.trim().length > 0) {
+    finalImageData = applyTextOverlay(imageData, text, textSize, textY);
+  }
+
   const vertices: number[] = [];
   const indices: number[] = [];
   const validPoints: boolean[] = [];
 
-  const processedData = smoothing > 0 ? applySmoothing(imageData, smoothing) : imageData.data;
+  const processedData = smoothing > 0 ? applySmoothing(finalImageData, smoothing) : finalImageData.data;
 
   const isInside = (u: number, v: number) => {
     const x = u - 0.5;
     const y = v - 0.5;
-
     if (hasHole) {
       const holeX = 0;
       const holeY = 0.4; 
       const distToHole = Math.sqrt(Math.pow(x - holeX, 2) + Math.pow(y - holeY, 2));
       if (distToHole < (holeSize / 100)) return false; 
     }
-
     switch (type) {
-      case 'circle':
-        return (x * x + y * y) <= 0.25;
+      case 'circle': return (x * x + y * y) <= 0.25;
       case 'heart':
         const hX = x * 2.2;
         const hY = y * 2.2 + 0.2;
         return Math.pow(hX * hX + hY * hY - 1, 3) - hX * hX * Math.pow(hY, 3) <= 0;
-      case 'badge':
-        return Math.abs(x) <= 0.4 && (y <= 0.4 && y >= -0.5 + Math.abs(x));
-      default:
-        return true;
+      case 'badge': return Math.abs(x) <= 0.4 && (y <= 0.4 && y >= -0.5 + Math.abs(x));
+      default: return true;
     }
   };
 
@@ -76,7 +82,6 @@ export function generateLithophaneGeometry(
     const y = v - 0.5;
     const outerLimit = 0.5;
     const innerLimit = 0.5 - (borderThickness / Math.max(widthMm, heightMm));
-    
     switch (type) {
       case 'circle':
         const dist = Math.sqrt(x * x + y * y);
@@ -88,23 +93,21 @@ export function generateLithophaneGeometry(
   };
 
   const getInterpolatedVal = (u: number, v: number) => {
-    const x = u * (imageData.width - 1);
-    const y = (1 - v) * (imageData.height - 1);
+    const x = u * (finalImageData.width - 1);
+    const y = (1 - v) * (finalImageData.height - 1);
     const x1 = Math.floor(x);
     const y1 = Math.floor(y);
-    const x2 = Math.min(x1 + 1, imageData.width - 1);
-    const y2 = Math.min(y1 + 1, imageData.height - 1);
+    const x2 = Math.min(x1 + 1, finalImageData.width - 1);
+    const y2 = Math.min(y1 + 1, finalImageData.height - 1);
     const dx = x - x1;
     const dy = y - y1;
-    
     const getPixelGray = (px: number, py: number) => {
-      const idx = (py * imageData.width + px) * 4;
+      const idx = (py * finalImageData.width + px) * 4;
       const cFactor = (259 * (contrast + 255)) / (255 * (259 - contrast));
       const process = (val: number) => Math.min(255, Math.max(0, cFactor * (val + brightness - 128) + 128));
       const gray = (process(processedData[idx]) * 0.299 + process(processedData[idx+1]) * 0.587 + process(processedData[idx+2]) * 0.114) / 255;
       return inverted ? gray : 1 - gray;
     };
-
     return (getPixelGray(x1, y1) * (1 - dx) * (1 - dy)) +
            (getPixelGray(x2, y1) * dx * (1 - dy)) +
            (getPixelGray(x1, y2) * (1 - dx) * dy) +
@@ -114,7 +117,6 @@ export function generateLithophaneGeometry(
   const getPosition = (u: number, v: number, thickness: number) => {
     const x = (u - 0.5) * widthMm;
     const y = (v - 0.5) * heightMm;
-    
     if (type === 'curved') {
       const radius = curveRadius * 10;
       const angle = x / radius;
@@ -128,11 +130,9 @@ export function generateLithophaneGeometry(
       const pz = Math.cos(angle) * (radius + thickness);
       return { x: px, y, z: pz };
     }
-    
     return { x, y, z: thickness };
   };
 
-  // 1. Generate Vertices
   for (let j = 0; j < gridY; j++) {
     for (let i = 0; i < gridX; i++) {
       const u = i / (gridX - 1);
@@ -140,7 +140,6 @@ export function generateLithophaneGeometry(
       const inside = isInside(u, v);
       const inBorder = isInBorder(u, v);
       validPoints.push(inside || inBorder);
-
       let thickness = 0;
       if (inside) {
         const bVal = getInterpolatedVal(u, v);
@@ -148,13 +147,11 @@ export function generateLithophaneGeometry(
       } else if (inBorder) {
         thickness = borderHeight;
       }
-      
       const pos = getPosition(u, v, thickness);
       vertices.push(pos.x, pos.y, pos.z);
     }
   }
 
-  // Back face
   const backOffset = vertices.length / 3;
   for (let j = 0; j < gridY; j++) {
     for (let i = 0; i < gridX; i++) {
@@ -165,32 +162,24 @@ export function generateLithophaneGeometry(
     }
   }
 
-  // 2. Generate Indices
   for (let j = 0; j < gridY - 1; j++) {
     for (let i = 0; i < gridX - 1; i++) {
       const a = j * gridX + i;
       const b = j * gridX + (i + 1);
       const c = (j + 1) * gridX + i;
       const d = (j + 1) * gridX + (i + 1);
-
       if (validPoints[a] && validPoints[b] && validPoints[c] && validPoints[d]) {
-        // Front face
-        indices.push(a, c, b);
-        indices.push(b, c, d);
-        // Back face
+        indices.push(a, c, b); indices.push(b, c, d);
         indices.push(a + backOffset, b + backOffset, c + backOffset);
         indices.push(b + backOffset, d + backOffset, c + backOffset);
       }
     }
   }
 
-  // 3. Side Walls
   for (let j = 0; j < gridY; j++) {
     for (let i = 0; i < gridX; i++) {
       const idx = j * gridX + i;
       if (!validPoints[idx]) continue;
-      
-      // Left edge
       if (i === 0 || !validPoints[idx - 1]) {
         const nextJ = (j === gridY - 1) ? j : j + 1;
         if (validPoints[nextJ * gridX + i]) {
@@ -198,7 +187,6 @@ export function generateLithophaneGeometry(
           indices.push(a, b, c); indices.push(b, d, c);
         }
       }
-      // Right edge
       if (i === gridX - 1 || !validPoints[idx + 1]) {
         const nextJ = (j === gridY - 1) ? j : j + 1;
         if (validPoints[nextJ * gridX + i]) {
@@ -206,7 +194,6 @@ export function generateLithophaneGeometry(
           indices.push(a, c, b); indices.push(b, c, d);
         }
       }
-      // Bottom edge
       if (j === 0 || !validPoints[idx - gridX]) {
         const nextI = (i === gridX - 1) ? i : i + 1;
         if (validPoints[j * gridX + nextI]) {
@@ -214,7 +201,6 @@ export function generateLithophaneGeometry(
           indices.push(a, c, b); indices.push(b, c, d);
         }
       }
-      // Top edge
       if (j === gridY - 1 || !validPoints[idx + gridX]) {
         const nextI = (i === gridX - 1) ? i : i + 1;
         if (validPoints[j * gridX + nextI]) {
@@ -229,8 +215,31 @@ export function generateLithophaneGeometry(
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
   geometry.setIndex(indices);
   geometry.computeVertexNormals();
-  
   return geometry;
+}
+
+function applyTextOverlay(imageData: ImageData, text: string, size: number, yPos: number): ImageData {
+  const canvas = document.createElement('canvas');
+  canvas.width = imageData.width;
+  canvas.height = imageData.height;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return imageData;
+
+  // Draw original image
+  const tempCanvas = document.createElement('canvas');
+  tempCanvas.width = imageData.width;
+  tempCanvas.height = imageData.height;
+  tempCanvas.getContext('2d')?.putImageData(imageData, 0, 0);
+  ctx.drawImage(tempCanvas, 0, 0);
+
+  // Draw Text
+  ctx.font = `bold ${size}px sans-serif`;
+  ctx.fillStyle = 'black'; // Black text = thickest part of lithophane
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, canvas.width / 2, canvas.height * yPos);
+
+  return ctx.getImageData(0, 0, canvas.width, canvas.height);
 }
 
 function applySmoothing(imageData: ImageData, radius: number): Uint8ClampedArray {
@@ -239,44 +248,21 @@ function applySmoothing(imageData: ImageData, radius: number): Uint8ClampedArray
   const height = imageData.height;
   const r = Math.floor(radius);
   if (r <= 0) return data;
-
-  for (let pass = 0; pass < 1; pass++) {
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        let rSum = 0, gSum = 0, bSum = 0, count = 0;
-        for (let ky = -r; ky <= r; ky++) {
-          const py = Math.min(height - 1, Math.max(0, y + ky));
-          for (let kx = -r; kx <= r; kx++) {
-            const px = Math.min(width - 1, Math.max(0, x + kx));
-            const idx = (py * width + px) * 4;
-            rSum += data[idx]; gSum += data[idx + 1]; bSum += data[idx + 2];
-            count++;
-          }
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      let rSum = 0, gSum = 0, bSum = 0, count = 0;
+      for (let ky = -r; ky <= r; ky++) {
+        const py = Math.min(height - 1, Math.max(0, y + ky));
+        for (let kx = -r; kx <= r; kx++) {
+          const px = Math.min(width - 1, Math.max(0, x + kx));
+          const idx = (py * width + px) * 4;
+          rSum += data[idx]; gSum += data[idx + 1]; bSum += data[idx + 2];
+          count++;
         }
-        const outIdx = (y * width + x) * 4;
-        data[outIdx] = rSum / count; data[outIdx + 1] = gSum / count; data[outIdx + 2] = bSum / count;
       }
+      const outIdx = (y * width + x) * 4;
+      data[outIdx] = rSum / count; data[outIdx + 1] = gSum / count; data[outIdx + 2] = bSum / count;
     }
   }
   return data;
-}
-
-export function getImageData(file: File): Promise<ImageData> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width; canvas.height = img.height;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return reject('Could not get canvas context');
-        ctx.drawImage(img, 0, 0);
-        resolve(ctx.getImageData(0, 0, img.width, img.height));
-      };
-      img.src = e.target?.result as string;
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
 }

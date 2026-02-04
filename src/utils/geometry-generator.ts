@@ -61,11 +61,11 @@ function pseudoNoise(x: number, y: number, seed: number) {
 export function generateLampshadeGeometry(params: LampshadeParams): THREE.BufferGeometry {
   const { type, silhouette, height, topRadius, bottomRadius, segments, seed, thickness } = params;
   
-  const getProfilePoints = (steps = 60) => {
+  const getProfilePoints = (steps = 60, offset = 0) => {
     const points = [];
     for (let i = 0; i <= steps; i++) {
       const t = i / steps;
-      let r = topRadius + (bottomRadius - topRadius) * t;
+      let r = (topRadius + offset) + ((bottomRadius + offset) - (topRadius + offset)) * t;
       const y = -height / 2 + height * t;
       
       switch (silhouette) {
@@ -91,10 +91,21 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
   const profile = getProfilePoints();
 
   switch (type) {
+    case 'double_wall': {
+      const gap = params.gapDistance || 0.5;
+      const outerProfile = getProfilePoints(60, 0);
+      const innerProfile = getProfilePoints(60, -gap);
+      
+      const outerGeom = new THREE.LatheGeometry(outerProfile, segments);
+      const innerGeom = new THREE.LatheGeometry(innerProfile, segments);
+      
+      geometry = BufferGeometryUtils.mergeGeometries([outerGeom, innerGeom]);
+      break;
+    }
+
     case 'origami': {
       const folds = params.foldCount || 12;
       const depth = params.foldDepth || 0.8;
-      // Use a high-segment lathe but modify vertices to create sharp folds
       geometry = new THREE.LatheGeometry(profile, folds * 2);
       const pos = geometry.attributes.position;
       for (let i = 0; i < pos.count; i++) {
@@ -102,12 +113,9 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
         const pz = pos.getZ(i);
         const r = Math.sqrt(px * px + pz * pz);
         const angle = Math.atan2(pz, px);
-        
-        // Every second segment is pushed inward
         const segmentIndex = Math.round((angle / (Math.PI * 2)) * (folds * 2));
         const isInner = segmentIndex % 2 !== 0;
         const factor = isInner ? (r - depth) / r : 1;
-        
         pos.setX(i, px * factor);
         pos.setZ(i, pz * factor);
       }
@@ -118,12 +126,10 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       const count = params.slotCount || 16;
       const width = params.slotWidth || 0.2;
       const geoms: THREE.BufferGeometry[] = [];
-      
       for (let i = 0; i < count; i++) {
         const angle = (i / count) * Math.PI * 2;
         const finGeom = new THREE.PlaneGeometry(1, height, 1, 20);
         const pos = finGeom.attributes.position;
-        
         for (let j = 0; j < pos.count; j++) {
           const py = pos.getY(j);
           const normY = (py + height / 2) / height;
@@ -132,21 +138,17 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
           if (px > 0) pos.setX(j, r);
           else pos.setX(j, r - 2); 
         }
-        
         finGeom.rotateY(angle);
         geoms.push(finGeom);
       }
-      
       const ringTop = new THREE.TorusGeometry(topRadius, width, 8, segments);
       ringTop.rotateX(Math.PI / 2);
       ringTop.translate(0, height / 2, 0);
       geoms.push(ringTop);
-      
       const ringBottom = new THREE.TorusGeometry(bottomRadius, width, 8, segments);
       ringBottom.rotateX(Math.PI / 2);
       ringBottom.translate(0, -height / 2, 0);
       geoms.push(ringBottom);
-      
       geometry = BufferGeometryUtils.mergeGeometries(geoms);
       break;
     }
@@ -156,14 +158,12 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       geometry = new THREE.LatheGeometry(profile, segments);
       const pos = geometry.attributes.position;
       const points: THREE.Vector3[] = [];
-      
       for (let i = 0; i < cells; i++) {
         const angle = pseudoNoise(i, 0, seed) * Math.PI * 2;
         const h = (pseudoNoise(0, i, seed) - 0.5) * height;
         const r = topRadius + (bottomRadius - topRadius) * ((h + height / 2) / height);
         points.push(new THREE.Vector3(Math.cos(angle) * r, h, Math.sin(angle) * r));
       }
-
       for (let i = 0; i < pos.count; i++) {
         const v = new THREE.Vector3(pos.getX(i), pos.getY(i), pos.getZ(i));
         let minDist = Infinity;
@@ -171,7 +171,6 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
           const d = v.distanceTo(p);
           if (d < minDist) minDist = d;
         });
-        
         const factor = 1 - Math.exp(-minDist * 0.5) * 0.2;
         pos.setX(i, v.x * factor);
         pos.setZ(i, v.z * factor);
