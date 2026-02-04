@@ -4,11 +4,11 @@ export type LithophaneType = 'flat' | 'circle' | 'heart' | 'badge' | 'curved' | 
 
 export interface LithophaneParams {
   type: LithophaneType;
-  width: number;
-  height: number;
-  minThickness: number; // Brightest pixels
-  maxThickness: number; // Darkest pixels
-  baseThickness: number; // Additional floor thickness
+  width: number; // in cm
+  height: number; // in cm
+  minThickness: number; // in mm (Brightest pixels)
+  maxThickness: number; // in mm (Darkest pixels)
+  baseThickness: number; // in mm
   curveRadius: number;
   resolution: number;
   inverted: boolean;
@@ -33,8 +33,11 @@ export function generateLithophaneGeometry(
     hasBorder, borderThickness, borderHeight
   } = params;
   
+  // Convert cm to mm for internal calculations to ensure 1:1 scale for STL export
+  const widthMm = width * 10;
+  const heightMm = height * 10;
+  
   const aspect = imageData.width / imageData.height;
-  // High-density grid for maximum detail
   const gridX = Math.floor(resolution * aspect);
   const gridY = resolution;
   
@@ -74,12 +77,12 @@ export function generateLithophaneGeometry(
     const x = u - 0.5;
     const y = v - 0.5;
     const outerLimit = 0.5;
-    const innerLimit = 0.5 - (borderThickness / Math.max(width, height) * 0.1);
+    const innerLimit = 0.5 - (borderThickness / Math.max(widthMm, heightMm));
     
     switch (type) {
       case 'circle':
         const dist = Math.sqrt(x * x + y * y);
-        return dist <= 0.5 && dist >= (0.5 - (borderThickness / Math.max(width, height) * 0.1));
+        return dist <= 0.5 && dist >= (0.5 - (borderThickness / Math.max(widthMm, heightMm)));
       default:
         return (Math.abs(x) <= outerLimit && Math.abs(y) <= outerLimit) && 
                !(Math.abs(x) <= innerLimit && Math.abs(y) <= innerLimit);
@@ -119,7 +122,6 @@ export function generateLithophaneGeometry(
       const inBorder = isInBorder(u, v);
       validPoints.push(inside || inBorder);
 
-      // Proper thickness logic: minThickness is the floor (brightest), maxThickness is the peak (darkest)
       let thickness = 0;
       if (inside) {
         const bVal = getInterpolatedVal(u, v);
@@ -128,8 +130,8 @@ export function generateLithophaneGeometry(
         thickness = borderHeight;
       }
       
-      const xPos = (u - 0.5) * width;
-      const yPos = (v - 0.5) * height;
+      const xPos = (u - 0.5) * widthMm;
+      const yPos = (v - 0.5) * heightMm;
       vertices.push(xPos, yPos, thickness);
     }
   }
@@ -139,8 +141,8 @@ export function generateLithophaneGeometry(
     for (let i = 0; i < gridX; i++) {
       const u = i / (gridX - 1);
       const v = j / (gridY - 1);
-      const xPos = (u - 0.5) * width;
-      const yPos = (v - 0.5) * height;
+      const xPos = (u - 0.5) * widthMm;
+      const yPos = (v - 0.5) * heightMm;
       vertices.push(xPos, yPos, 0);
     }
   }

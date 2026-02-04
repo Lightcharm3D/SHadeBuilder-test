@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { LithophaneParams } from '@/utils/lithophane-generator';
-import { Download, Image as ImageIcon, Sun, Contrast, Zap, Sparkles, Circle, Heart, Square, Frame, Layers } from 'lucide-react';
+import { Download, Image as ImageIcon, Sun, Contrast, Zap, Sparkles, Circle, Heart, Square, Frame, Layers, Maximize } from 'lucide-react';
+import { showSuccess } from '@/utils/toast';
 
 interface LithophaneControlsProps {
   params: LithophaneParams;
@@ -17,6 +18,7 @@ interface LithophaneControlsProps {
   onApplyPreset: (preset: string) => void;
   isProcessing: boolean;
   imagePreview?: string | null;
+  imageData?: ImageData | null;
 }
 
 const LithophaneControls: React.FC<LithophaneControlsProps> = ({ 
@@ -26,10 +28,18 @@ const LithophaneControls: React.FC<LithophaneControlsProps> = ({
   onExport, 
   onApplyPreset, 
   isProcessing,
-  imagePreview
+  imagePreview,
+  imageData
 }) => {
   const updateParam = (key: keyof LithophaneParams, value: any) => {
     setParams({ ...params, [key]: value });
+  };
+
+  const fixAspectRatio = () => {
+    if (!imageData) return;
+    const aspect = imageData.width / imageData.height;
+    updateParam('height', parseFloat((params.width / aspect).toFixed(2)));
+    showSuccess("Aspect ratio matched to image!");
   };
 
   return (
@@ -124,65 +134,19 @@ const LithophaneControls: React.FC<LithophaneControlsProps> = ({
               onValueChange={([v]) => updateParam('resolution', v)} 
               className="py-1"
             />
-            <p className="text-[8px] text-slate-400 italic">Higher values = more detail but slower processing</p>
-          </div>
-        </div>
-
-        <div className="space-y-3 p-3 bg-slate-50 rounded-lg border border-slate-100">
-          <Label className="text-[9px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-1">
-            <Zap className="w-2 h-2" />
-            Image Adjustments
-          </Label>
-          <div className="space-y-3">
-            <div className="space-y-1">
-              <div className="flex justify-between text-[9px] font-medium">
-                <span className="flex items-center gap-1"><Sun className="w-2 h-2" /> Brightness</span>
-                <span>{params.brightness}</span>
-              </div>
-              <Slider 
-                value={[params.brightness]} 
-                min={-100} 
-                max={100} 
-                step={1} 
-                onValueChange={([v]) => updateParam('brightness', v)} 
-                className="py-1"
-              />
-            </div>
-            
-            <div className="space-y-1">
-              <div className="flex justify-between text-[9px] font-medium">
-                <span className="flex items-center gap-1"><Contrast className="w-2 h-2" /> Contrast</span>
-                <span>{params.contrast}</span>
-              </div>
-              <Slider 
-                value={[params.contrast]} 
-                min={-100} 
-                max={100} 
-                step={1} 
-                onValueChange={([v]) => updateParam('contrast', v)} 
-                className="py-1"
-              />
-            </div>
-            
-            <div className="space-y-1">
-              <div className="flex justify-between text-[9px] font-medium">
-                <span className="flex items-center gap-1"><Sparkles className="w-2 h-2" /> Smoothing</span>
-                <span>{params.smoothing}</span>
-              </div>
-              <Slider 
-                value={[params.smoothing]} 
-                min={0} 
-                max={5} 
-                step={0.5} 
-                onValueChange={([v]) => updateParam('smoothing', v)} 
-                className="py-1"
-              />
-            </div>
           </div>
         </div>
 
         <div className="space-y-3">
-          <Label className="text-xs font-bold uppercase tracking-wider text-slate-400">3. Model Settings</Label>
+          <div className="flex items-center justify-between">
+            <Label className="text-xs font-bold uppercase tracking-wider text-slate-400">3. Model Settings</Label>
+            {imageData && (
+              <Button variant="ghost" size="sm" onClick={fixAspectRatio} className="h-6 text-[9px] gap-1 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50">
+                <Maximize className="w-2 h-2" />
+                Fix Aspect Ratio
+              </Button>
+            )}
+          </div>
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1">
               <Label className="text-[9px]">Width (cm)</Label>
@@ -206,7 +170,7 @@ const LithophaneControls: React.FC<LithophaneControlsProps> = ({
           
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1">
-              <Label className="text-[9px]">Min Thick (Brightest)</Label>
+              <Label className="text-[9px]">Min Thick (mm)</Label>
               <Input 
                 type="number" 
                 step={0.1} 
@@ -216,7 +180,7 @@ const LithophaneControls: React.FC<LithophaneControlsProps> = ({
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-[9px]">Max Thick (Darkest)</Label>
+              <Label className="text-[9px]">Max Thick (mm)</Label>
               <Input 
                 type="number" 
                 step={0.1} 

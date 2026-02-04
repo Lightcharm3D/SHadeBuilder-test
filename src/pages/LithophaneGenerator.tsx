@@ -19,7 +19,7 @@ const LithophaneGenerator = () => {
     maxThickness: 2.8,
     baseThickness: 0.8,
     curveRadius: 15,
-    resolution: 200, // Increased default for better quality
+    resolution: 200,
     inverted: false,
     brightness: 0,
     contrast: 20,
@@ -159,6 +159,7 @@ const LithophaneGenerator = () => {
             onApplyPreset={handleApplyPreset} 
             isProcessing={isProcessing} 
             imagePreview={imagePreview}
+            imageData={imageData}
           />
         </div>
       </main>
