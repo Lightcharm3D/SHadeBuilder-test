@@ -7,7 +7,6 @@ import { LampshadeParams, LampshadeType } from '@/utils/geometry-generator';
 import { STLExporter } from 'three/examples/jsm/exporters/STLExporter.js';
 import * as THREE from 'three';
 import { showSuccess, showError } from '@/utils/toast';
-import { MadeWithDyad } from '@/components/made-with-dyad';
 import { Box, Layers, Zap, Ruler } from 'lucide-react';
 
 const Index = () => {
@@ -158,8 +157,8 @@ const Index = () => {
         </div>
       </main>
 
-      <footer className="py-4 border-t border-slate-200 bg-white">
-        <MadeWithDyad />
+      <footer className="py-4 border-t border-slate-200 bg-white text-center">
+        <p className="text-xs text-slate-400">© {new Date().getFullYear()} LightCharm 3D. All rights reserved.</p>
       </footer>
     </div>
   );
