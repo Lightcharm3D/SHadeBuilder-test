@@ -75,7 +75,7 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     grid.position.y = 0.01;
     bedGroup.add(grid);
 
-    // Brand Label - Centered and Larger
+    // Brand Label - Centered at Front Edge
     const canvas = document.createElement('canvas');
     canvas.width = 1024;
     canvas.height = 256;
@@ -90,15 +90,16 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
       ctx.fillText('LightCharm 3D', 512, 128);
     }
     const brandTexture = new THREE.CanvasTexture(canvas);
-    const brandGeom = new THREE.PlaneGeometry(24, 6);
+    const brandGeom = new THREE.PlaneGeometry(20, 5);
     const brandMat = new THREE.MeshBasicMaterial({ 
       map: brandTexture, 
       transparent: true,
-      opacity: 0.4
+      opacity: 0.5
     });
     const brandMesh = new THREE.Mesh(brandGeom, brandMat);
     brandMesh.rotation.x = -Math.PI / 2;
-    brandMesh.position.set(0, 0.05, 0); // Centered
+    // Position at the front edge (positive Z)
+    brandMesh.position.set(0, 0.05, bedSize / 2 - 3); 
     bedGroup.add(brandMesh);
 
     scene.add(bedGroup);
