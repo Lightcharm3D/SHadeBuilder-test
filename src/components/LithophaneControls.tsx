@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { LithophaneParams } from '@/utils/lithophane-generator';
-import { Download, Image as ImageIcon, Layers, Maximize, Square, Circle, Heart, Crop, Sliders, Box, Settings2 } from 'lucide-react';
+import { Download, Image as ImageIcon, Layers, Maximize, Square, Circle, Heart, Crop, Sliders, Box, Settings2, Star } from 'lucide-react';
 import { showSuccess } from '@/utils/toast';
 
 interface LithophaneControlsProps {
@@ -46,11 +46,21 @@ const LithophaneControls: React.FC<LithophaneControlsProps> = ({
 
   return (
     <div className="flex flex-col gap-4 p-4 bg-white rounded-xl border border-slate-200 shadow-sm h-full overflow-y-auto">
-      <div className="space-y-2">
-        <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-          <ImageIcon className="w-4 h-4 text-indigo-600" />
-          Lithophane Studio
-        </h2>
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+            <ImageIcon className="w-4 h-4 text-indigo-600" />
+            Lithophane Studio
+          </h2>
+          <div className="flex gap-1">
+            <Button variant="ghost" size="sm" onClick={() => onApplyPreset('portrait')} className="h-7 text-[9px] px-2 bg-slate-50 hover:bg-indigo-50 text-slate-600 hover:text-indigo-600">
+              Portrait
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => onApplyPreset('keychain')} className="h-7 text-[9px] px-2 bg-slate-50 hover:bg-indigo-50 text-slate-600 hover:text-indigo-600">
+              Keychain
+            </Button>
+          </div>
+        </div>
         <p className="text-xs text-slate-500">Professional 3D Print Generator</p>
       </div>
 
@@ -219,17 +229,10 @@ const LithophaneControls: React.FC<LithophaneControlsProps> = ({
             </div>
           </div>
 
-          {params.type === 'curved' && (
-            <div className="space-y-1">
-              <Label className="text-[9px]">Curve Radius (cm)</Label>
-              <Input 
-                type="number" 
-                value={params.curveRadius} 
-                onChange={(e) => updateParam('curveRadius', parseFloat(e.target.value))} 
-                className="h-8 text-xs"
-              />
-            </div>
-          )}
+          <div className="flex items-center justify-between p-2 bg-slate-50 rounded-lg border border-slate-100">
+            <span className="text-[10px] font-medium text-slate-700">Add Keychain Hole</span>
+            <Switch checked={params.hasHole} onCheckedChange={(v) => updateParam('hasHole', v)} />
+          </div>
           
           <div className="flex items-center justify-between p-2 bg-slate-50 rounded-lg border border-slate-100">
             <span className="text-[10px] font-medium text-slate-700">Invert Height</span>
