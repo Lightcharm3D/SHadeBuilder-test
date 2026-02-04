@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Cpu } from 'lucide-react';
 
 const SplashScreen = () => {
   return (
@@ -19,8 +18,8 @@ const SplashScreen = () => {
         className="relative"
       >
         <div className="absolute -inset-12 brand-gradient rounded-full blur-[60px] opacity-20 animate-pulse"></div>
-        <div className="relative w-28 h-28 brand-gradient rounded-[2.5rem] flex items-center justify-center text-white shadow-[0_0_50px_rgba(99,102,241,0.3)] transform hover:scale-105 transition-transform duration-500">
-          <Cpu className="w-14 h-14" />
+        <div className="relative w-28 h-28 brand-gradient rounded-[2.5rem] flex items-center justify-center text-white shadow-[0_0_50px_rgba(99,102,241,0.3)] transform hover:scale-105 transition-transform duration-500 overflow-hidden">
+          <img src="/1770199671230.png" className="w-16 h-16 object-contain" alt="Splash Logo" />
         </div>
       </motion.div>
       

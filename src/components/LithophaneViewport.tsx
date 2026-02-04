@@ -4,7 +4,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { Button } from '@/components/ui/button';
-import { Lightbulb, LightbulbOff } from 'lucide-react';
 
 interface ViewportProps {
   geometry: THREE.BufferGeometry | null;
@@ -176,7 +175,11 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
           onClick={() => setIsBacklightOn(!isBacklightOn)}
           className={`gap-2 h-10 px-4 text-[10px] font-black uppercase tracking-widest shadow-2xl transition-all ${isBacklightOn ? 'bg-amber-100 text-amber-700 hover:bg-amber-200 scale-105' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
         >
-          {isBacklightOn ? <Lightbulb className="w-4 h-4" /> : <LightbulbOff className="w-4 h-4" />}
+          <img 
+            src="/1770199671230.png" 
+            className={`w-4 h-4 object-contain transition-all ${isBacklightOn ? 'brightness-125 drop-shadow-[0_0_5px_rgba(251,191,36,0.8)]' : 'grayscale opacity-50'}`} 
+            alt="Backlight Toggle" 
+          />
           {isBacklightOn ? 'Backlight On' : 'Backlight Off'}
         </Button>
       </div>
