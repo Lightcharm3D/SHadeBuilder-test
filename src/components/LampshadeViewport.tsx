@@ -42,21 +42,29 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
+    renderer.toneMapping = THREE.ReinhardToneMapping;
+    renderer.toneMappingExposure = 1.2;
     containerRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // Lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    // Lighting - Studio Setup
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
     scene.add(ambientLight);
     
-    const mainLight = new THREE.DirectionalLight(0xffffff, 1);
+    const mainLight = new THREE.DirectionalLight(0xffffff, 1.2);
     mainLight.position.set(20, 40, 20);
     mainLight.castShadow = true;
+    mainLight.shadow.mapSize.width = 1024;
+    mainLight.shadow.mapSize.height = 1024;
     scene.add(mainLight);
     
-    const fillLight = new THREE.PointLight(0x6366f1, 0.5);
+    const fillLight = new THREE.PointLight(0x6366f1, 0.8);
     fillLight.position.set(-20, 10, -20);
     scene.add(fillLight);
+
+    const rimLight = new THREE.DirectionalLight(0xffffff, 0.6);
+    rimLight.position.set(0, 10, -30);
+    scene.add(rimLight);
 
     // Print Bed
     const bedGroup = new THREE.Group();
@@ -64,7 +72,8 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     const bedGeom = new THREE.PlaneGeometry(bedSize, bedSize);
     const bedMat = new THREE.MeshStandardMaterial({ 
       color: 0x1e293b, 
-      roughness: 0.8 
+      roughness: 0.8,
+      metalness: 0.2
     });
     const bed = new THREE.Mesh(bedGeom, bedMat);
     bed.rotation.x = -Math.PI / 2;
@@ -75,7 +84,7 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     grid.position.y = 0.01;
     bedGroup.add(grid);
 
-    // Brand Label - Centered at Front Edge
+    // Brand Label
     const canvas = document.createElement('canvas');
     canvas.width = 1024;
     canvas.height = 256;
@@ -98,7 +107,6 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     });
     const brandMesh = new THREE.Mesh(brandGeom, brandMat);
     brandMesh.rotation.x = -Math.PI / 2;
-    // Position at the front edge (positive Z)
     brandMesh.position.set(0, 0.05, bedSize / 2 - 3); 
     bedGroup.add(brandMesh);
 

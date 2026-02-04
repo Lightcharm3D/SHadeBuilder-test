@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import LampshadeViewport from '@/components/LampshadeViewport';
 import ControlPanel from '@/components/ControlPanel';
@@ -8,35 +8,36 @@ import { LampshadeParams, LampshadeType } from '@/utils/geometry-generator';
 import { STLExporter } from 'three/examples/jsm/exporters/STLExporter.js';
 import * as THREE from 'three';
 import { showSuccess, showError } from '@/utils/toast';
-import { Box, Layers, Zap, Ruler, Image as ImageIcon } from 'lucide-react';
+import { Box, Layers, Zap, Ruler, Image as ImageIcon, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+const DEFAULT_PARAMS: LampshadeParams = {
+  type: 'ribbed_drum',
+  height: 15,
+  topRadius: 5,
+  bottomRadius: 8,
+  thickness: 0.2,
+  segments: 64,
+  ribCount: 24,
+  ribDepth: 0.4,
+  twistAngle: 0,
+  cellCount: 12,
+  amplitude: 1,
+  frequency: 5,
+  sides: 6,
+  gridDensity: 10,
+  foldCount: 12,
+  foldDepth: 0.8,
+  noiseScale: 0.5,
+  noiseStrength: 0.5,
+  slotCount: 16,
+  slotWidth: 0.1,
+  gapDistance: 0.5,
+  seed: 1234,
+};
+
 const Index = () => {
-  const [params, setParams] = useState<LampshadeParams>({
-    type: 'ribbed_drum',
-    height: 15,
-    topRadius: 5,
-    bottomRadius: 8,
-    thickness: 0.2,
-    segments: 32, // Lower default for mobile performance
-    ribCount: 24,
-    ribDepth: 0.4,
-    twistAngle: 0,
-    cellCount: 12,
-    amplitude: 1,
-    frequency: 5,
-    sides: 6,
-    gridDensity: 10,
-    foldCount: 12,
-    foldDepth: 0.8,
-    noiseScale: 0.5,
-    noiseStrength: 0.5,
-    slotCount: 16,
-    slotWidth: 0.1,
-    gapDistance: 0.5,
-    seed: Math.random() * 1000,
-  });
-  
+  const [params, setParams] = useState<LampshadeParams>(DEFAULT_PARAMS);
   const [showWireframe, setShowWireframe] = useState(false);
   const meshRef = useRef<THREE.Mesh | null>(null);
 
@@ -68,6 +69,11 @@ const Index = () => {
     }
   };
 
+  const handleReset = () => {
+    setParams(DEFAULT_PARAMS);
+    showSuccess("Parameters reset to default");
+  };
+
   const handleRandomize = () => {
     const types: LampshadeType[] = [
       'ribbed_drum',
@@ -84,48 +90,41 @@ const Index = () => {
     
     const newType = types[Math.floor(Math.random() * types.length)];
     
-    // Set default parameters based on type
     let newParams: Partial<LampshadeParams> = {};
     switch (newType) {
       case 'ribbed_drum':
-        newParams = { ribCount: Math.floor(10 + Math.random() * 40), ribDepth: Math.random() * 1 };
+        newParams = { ribCount: Math.floor(12 + Math.random() * 36), ribDepth: 0.2 + Math.random() * 0.8 };
         break;
       case 'spiral_twist':
-        newParams = { twistAngle: Math.random() * 720 };
+        newParams = { twistAngle: 90 + Math.random() * 630 };
         break;
       case 'origami':
-        newParams = { foldCount: Math.floor(6 + Math.random() * 24), foldDepth: Math.random() * 1.5 };
+        newParams = { foldCount: Math.floor(8 + Math.random() * 20), foldDepth: 0.4 + Math.random() * 1.2 };
         break;
       case 'geometric_poly':
-        newParams = { sides: Math.floor(3 + Math.random() * 10) };
+        newParams = { sides: Math.floor(3 + Math.random() * 9) };
         break;
       case 'wave_shell':
-        newParams = { amplitude: Math.random() * 2, frequency: 2 + Math.random() * 10 };
+        newParams = { amplitude: 0.5 + Math.random() * 1.5, frequency: 3 + Math.random() * 8 };
         break;
       case 'perlin_noise':
-        newParams = { noiseScale: Math.random() * 1, noiseStrength: Math.random() * 1 };
+        newParams = { noiseScale: 0.3 + Math.random() * 0.7, noiseStrength: 0.2 + Math.random() * 0.8 };
         break;
       case 'voronoi':
-        newParams = { cellCount: Math.floor(5 + Math.random() * 20) };
+        newParams = { cellCount: Math.floor(8 + Math.random() * 16) };
         break;
       case 'lattice':
-        newParams = { gridDensity: Math.floor(5 + Math.random() * 20) };
-        break;
-      case 'slotted':
-        newParams = { slotCount: Math.floor(8 + Math.random() * 32), slotWidth: 0.05 + Math.random() * 0.2 };
-        break;
-      case 'double_wall':
-        newParams = { gapDistance: 0.2 + Math.random() * 0.8 };
+        newParams = { gridDensity: Math.floor(8 + Math.random() * 16) };
         break;
     }
     
     setParams({
       ...params,
       type: newType,
-      height: 10 + Math.random() * 15,
-      topRadius: 3 + Math.random() * 7,
-      bottomRadius: 5 + Math.random() * 10,
-      seed: Math.random() * 1000,
+      height: 12 + Math.random() * 12,
+      topRadius: 4 + Math.random() * 6,
+      bottomRadius: 6 + Math.random() * 8,
+      seed: Math.random() * 10000,
       ...newParams
     });
     
@@ -182,7 +181,8 @@ const Index = () => {
             showWireframe={showWireframe} 
             setShowWireframe={setShowWireframe} 
             onExport={handleExport} 
-            onRandomize={handleRandomize} 
+            onRandomize={handleRandomize}
+            onReset={handleReset}
           />
         </div>
       </main>
