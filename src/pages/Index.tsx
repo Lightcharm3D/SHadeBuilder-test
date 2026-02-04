@@ -65,13 +65,6 @@ const Index = () => {
     meshRef.current = mesh;
   };
 
-  const estimateWeight = () => {
-    const avgRadius = (params.topRadius + params.bottomRadius) / 2;
-    const surfaceArea = 2 * Math.PI * avgRadius * params.height;
-    const volume = surfaceArea * (params.thickness / 10); 
-    return (volume * 1.24).toFixed(1); 
-  };
-
   const handleExport = () => {
     if (!meshRef.current) {
       showError("Geometry not ready for export");
@@ -174,35 +167,6 @@ const Index = () => {
             onSceneReady={handleSceneReady} 
           />
           
-          {/* Viewport Overlays */}
-          <div className="absolute top-10 left-10 flex flex-col gap-6 pointer-events-none z-20">
-            <div className="bg-slate-900/60 backdrop-blur-3xl p-6 rounded-[2rem] border border-white/10 shadow-2xl transform group-hover:translate-x-2 transition-transform duration-700">
-              <div className="flex items-center gap-3 text-indigo-400 mb-5">
-                <div className="w-7 h-7 rounded-xl bg-indigo-500/20 flex items-center justify-center">
-                  <Activity className="w-4 h-4 animate-pulse" />
-                </div>
-                <span className="text-[11px] font-black uppercase tracking-[0.3em]">Live Telemetry</span>
-              </div>
-              <div className="space-y-4">
-                <div className="flex justify-between gap-16">
-                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Z-Height</span>
-                  <span className="text-[12px] font-mono font-bold text-white">{(params.height * 10).toFixed(1)} mm</span>
-                </div>
-                <div className="flex justify-between gap-16">
-                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Max Width</span>
-                  <span className="text-[12px] font-mono font-bold text-white">{(Math.max(params.topRadius, params.bottomRadius) * 20).toFixed(1)} mm</span>
-                </div>
-                <div className="h-px bg-white/10 my-2" />
-                <div className="flex justify-between gap-16">
-                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest flex items-center gap-2">
-                    <Weight className="w-3.5 h-3.5 text-indigo-400" /> Est. Mass
-                  </span>
-                  <span className="text-[12px] font-mono font-bold text-indigo-300">{estimateWeight()} g</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
           <div className="absolute bottom-10 left-10 pointer-events-none z-20">
             <div className="flex items-center gap-4 bg-black/40 backdrop-blur-xl px-6 py-3 rounded-full border border-white/10 shadow-2xl">
               <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
