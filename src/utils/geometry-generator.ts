@@ -39,7 +39,7 @@ export interface LampshadeParams {
   fitterDiameter: number; // Ledge ID in mm
   fitterOuterDiameter: number; // Cylinder Diameter in mm
   fitterRingHeight: number; // Ledge Height in mm
-  fitterHeight: number;  // Offset from top in cm
+  fitterHeight: number;  // Offset from bottom in cm
   spokeThickness: number; // Vertical height in mm
   spokeWidth: number;     // Horizontal depth in mm
   
@@ -432,7 +432,8 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
   const spokeThickCm = spokeThickness / 10;
   const spokeWidthCm = spokeWidth / 10;
   
-  const yPos = height / 2 - fitterHeight;
+  // fitterHeight is now an offset from the bottom
+  const yPos = -height / 2 + fitterHeight;
   
   const ringProfile = [
     new THREE.Vector2(innerRadius, -ringHeightCm / 2),

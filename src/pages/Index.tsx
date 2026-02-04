@@ -42,7 +42,7 @@ const DEFAULT_PARAMS: LampshadeParams = {
   fitterDiameter: 27.6,
   fitterOuterDiameter: 36,
   fitterRingHeight: 10,
-  fitterHeight: 3,
+  fitterHeight: 0, // Starting at the bottom
   spokeThickness: 5,
   spokeWidth: 10,
 };
