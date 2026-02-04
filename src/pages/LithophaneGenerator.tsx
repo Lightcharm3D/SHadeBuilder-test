@@ -131,6 +131,7 @@ const LithophaneGenerator = () => {
       showError("Upload an image first");
       return;
     }
+    setIsProcessing(true);
     try {
       const exporter = new STLExporter();
       const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial());
@@ -141,6 +142,8 @@ const LithophaneGenerator = () => {
       showSuccess("STL exported!");
     } catch (err) {
       showError("Export failed");
+    } finally {
+      setIsProcessing(false);
     }
   }, [geometry]);
 

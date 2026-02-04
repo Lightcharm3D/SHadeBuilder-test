@@ -10,16 +10,16 @@ import { Capacitor } from '@capacitor/core';
 export const saveStlFile = async (content: string, fileName: string) => {
   if (Capacitor.isNativePlatform()) {
     try {
-      // Convert string to base64 for Capacitor Filesystem
-      const base64Data = btoa(content);
+      // Robust base64 conversion for mobile
+      const base64Data = btoa(unescape(encodeURIComponent(content)));
       
       const savedFile = await Filesystem.writeFile({
         path: fileName,
         data: base64Data,
-        directory: Directory.Cache, // Use Cache for temporary sharing
+        directory: Directory.Cache,
       });
 
-      // Open the native share sheet so the user can save to 'Files' or send it
+      // Open the native share sheet
       await Share.share({
         title: 'Export 3D Model',
         text: 'Your 3D printable STL file is ready.',
