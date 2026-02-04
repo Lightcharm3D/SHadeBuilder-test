@@ -34,6 +34,7 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
   const sceneRef = useRef<THREE.Scene | null>(null);
   const meshRef = useRef<THREE.Mesh | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const requestRef = useRef<number | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
   const bulbLightRef = useRef<THREE.PointLight | null>(null);
@@ -44,18 +45,15 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
   useEffect(() => {
     if (!containerRef.current) return;
 
-    const width = containerRef.current.clientWidth || 800;
-    const height = containerRef.current.clientHeight || 600;
-
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x0f172a);
     sceneRef.current = scene;
 
-    const camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 1000);
+    const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 1000);
     camera.position.set(30, 30, 30);
+    cameraRef.current = camera;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
     renderer.toneMapping = THREE.ReinhardToneMapping;
@@ -99,7 +97,7 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     grid.position.y = 0.01;
     bedGroup.add(grid);
 
-    // Brand Label - Updated to LightCharm 3D
+    // Brand Label
     const canvas = document.createElement('canvas');
     canvas.width = 1024;
     canvas.height = 256;
@@ -159,16 +157,19 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     };
     requestRef.current = requestAnimationFrame(animate);
 
-    const handleResize = () => {
-      if (!containerRef.current || !rendererRef.current) return;
-      camera.aspect = containerRef.current.clientWidth / containerRef.current.clientHeight;
-      camera.updateProjectionMatrix();
-      rendererRef.current.setSize(containerRef.current.clientWidth, containerRef.current.clientHeight);
-    };
-    window.addEventListener('resize', handleResize);
+    // Robust Resize Handling
+    const resizeObserver = new ResizeObserver((entries) => {
+      if (!entries[0] || !rendererRef.current || !cameraRef.current) return;
+      const { width, height } = entries[0].contentRect;
+      cameraRef.current.aspect = width / height;
+      cameraRef.current.updateProjectionMatrix();
+      rendererRef.current.setSize(width, height, false);
+    });
+
+    resizeObserver.observe(containerRef.current);
 
     return () => {
-      window.removeEventListener('resize', handleResize);
+      resizeObserver.disconnect();
       if (requestRef.current) cancelAnimationFrame(requestRef.current);
       if (rendererRef.current) rendererRef.current.dispose();
       if (containerRef.current && renderer.domElement) {
@@ -185,26 +186,6 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
       meshRef.current.position.y = params.height / 2;
       
       const mat = meshRef.current.material as THREE.MeshPhysicalMaterial;
-      
-      mat.customProgramCacheKey = () => showPrintability ? 'printability-on' : 'printability-off';
-      
-      if (showPrintability) {
-        mat.onBeforeCompile = (shader) => {
-          shader.fragmentShader = shader.fragmentShader.replace(
-            '#include <color_fragment>',
-            `
-            #include <color_fragment>
-            float angle = acos(dot(normalize(vNormal), vec3(0.0, 1.0, 0.0)));
-            if (angle > 0.785) { // > 45 degrees
-              diffuseColor.rgb = mix(diffuseColor.rgb, vec3(1.0, 0.1, 0.1), 0.8);
-            }
-            `
-          );
-        };
-      } else {
-        mat.onBeforeCompile = () => {};
-      }
-
       mat.color.set(material.color);
       mat.roughness = material.roughness;
       mat.metalness = material.metalness;
@@ -234,7 +215,7 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
 
   return (
     <div className="relative w-full h-full min-h-[300px] rounded-xl overflow-hidden bg-slate-950">
-      <div ref={containerRef} className="w-full h-full" />
+      <div ref={containerRef} className="w-full h-full absolute inset-0" />
       <div className="absolute bottom-3 right-3 flex gap-2">
         <Button 
           variant="secondary" 

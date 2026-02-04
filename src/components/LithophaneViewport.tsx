@@ -15,6 +15,7 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
   const sceneRef = useRef<THREE.Scene | null>(null);
   const meshRef = useRef<THREE.Mesh | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const requestRef = useRef<number | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
   const backlightRef = useRef<THREE.PointLight | null>(null);
@@ -24,18 +25,15 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
   useEffect(() => {
     if (!containerRef.current) return;
 
-    const width = containerRef.current.clientWidth || 800;
-    const height = containerRef.current.clientHeight || 600;
-
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x020617);
     sceneRef.current = scene;
 
-    const camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 2000);
+    const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 2000);
     camera.position.set(0, 50, 150);
+    cameraRef.current = camera;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
     containerRef.current.appendChild(renderer.domElement);
@@ -75,7 +73,7 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
     grid.position.y = 0.1;
     bedGroup.add(grid);
 
-    // Brand Label - Updated to LightCharm 3D
+    // Brand Label
     const canvas = document.createElement('canvas');
     canvas.width = 1024;
     canvas.height = 256;
@@ -118,19 +116,19 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
     
     requestRef.current = requestAnimationFrame(animate);
 
-    const handleResize = () => {
-      if (!containerRef.current || !rendererRef.current) return;
-      const w = containerRef.current.clientWidth;
-      const h = containerRef.current.clientHeight;
-      camera.aspect = w / h;
-      camera.updateProjectionMatrix();
-      rendererRef.current.setSize(w, h);
-    };
+    // Robust Resize Handling
+    const resizeObserver = new ResizeObserver((entries) => {
+      if (!entries[0] || !rendererRef.current || !cameraRef.current) return;
+      const { width, height } = entries[0].contentRect;
+      cameraRef.current.aspect = width / height;
+      cameraRef.current.updateProjectionMatrix();
+      rendererRef.current.setSize(width, height, false);
+    });
 
-    window.addEventListener('resize', handleResize);
+    resizeObserver.observe(containerRef.current);
 
     return () => {
-      window.removeEventListener('resize', handleResize);
+      resizeObserver.disconnect();
       if (requestRef.current) cancelAnimationFrame(requestRef.current);
       if (rendererRef.current) rendererRef.current.dispose();
       if (containerRef.current && renderer.domElement) {
@@ -184,7 +182,7 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
 
   return (
     <div className="relative w-full h-full min-h-[300px] rounded-xl overflow-hidden bg-slate-950">
-      <div ref={containerRef} className="w-full h-full" />
+      <div ref={containerRef} className="w-full h-full absolute inset-0" />
       <div className="absolute bottom-3 right-3">
         <Button 
           variant="secondary" 
