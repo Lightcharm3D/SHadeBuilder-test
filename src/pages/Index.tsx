@@ -103,7 +103,11 @@ const Index = () => {
   };
 
   const handleRandomize = () => {
-    const types: LampshadeType[] = ['ribbed_drum', 'spiral_twist', 'voronoi', 'wave_shell', 'geometric_poly', 'lattice', 'origami', 'perlin_noise', 'slotted', 'double_wall', 'organic_cell'];
+    const types: LampshadeType[] = [
+      'ribbed_drum', 'spiral_twist', 'voronoi', 'wave_shell', 'geometric_poly', 
+      'lattice', 'origami', 'perlin_noise', 'slotted', 'double_wall', 
+      'organic_cell', 'honeycomb_lattice', 'petal_bloom', 'dna_spiral', 'faceted_gem'
+    ];
     const silhouettes: SilhouetteType[] = ['straight', 'hourglass', 'bell', 'convex', 'concave'];
     
     const newType = types[Math.floor(Math.random() * types.length)];
@@ -118,6 +122,8 @@ const Index = () => {
       bottomRadius: 6 + Math.random() * 8,
       seed: Math.random() * 10000,
       internalRibs: Math.random() > 0.7 ? Math.floor(Math.random() * 8) : 0,
+      gridDensity: 8 + Math.floor(Math.random() * 10),
+      twistAngle: Math.random() * 720,
     });
     
     showSuccess("New design generated!");
