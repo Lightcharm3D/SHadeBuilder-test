@@ -1,29 +1,34 @@
-import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 import { Capacitor } from '@capacitor/core';
 
 /**
- * Saves a string or blob as a file. 
- * On Web: Triggers a standard download.
- * On Mobile: Saves to the device and opens the Share sheet.
+ * Saves a string as an STL file. 
+ * On Web: Triggers a standard browser download.
+ * On Mobile: Saves to the app's cache and opens the native Share sheet.
  */
 export const saveStlFile = async (content: string, fileName: string) => {
   if (Capacitor.isNativePlatform()) {
     try {
-      // Robust base64 conversion for mobile
-      const base64Data = btoa(unescape(encodeURIComponent(content)));
-      
-      const savedFile = await Filesystem.writeFile({
+      // Write the file using UTF-8 encoding directly to avoid base64 overhead/errors
+      await Filesystem.writeFile({
         path: fileName,
-        data: base64Data,
+        data: content,
         directory: Directory.Cache,
+        encoding: Encoding.UTF8,
       });
 
-      // Open the native share sheet
+      // Get the native URI for the file we just wrote
+      const uriResult = await Filesystem.getUri({
+        directory: Directory.Cache,
+        path: fileName
+      });
+
+      // Open the native share sheet which allows "Save to Files" on Android/iOS
       await Share.share({
         title: 'Export 3D Model',
         text: 'Your 3D printable STL file is ready.',
-        url: savedFile.uri,
+        url: uriResult.uri,
       });
       
       return true;
