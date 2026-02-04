@@ -27,6 +27,7 @@ const LithophaneControls: React.FC<LithophaneControlsProps> = ({
   setParams, 
   onImageUpload, 
   onExport, 
+  onApplyPreset,
   onTriggerCrop,
   isProcessing,
   imagePreview,
