@@ -8,18 +8,22 @@ import { LithophaneParams, generateLithophaneGeometry, getImageData } from '@/ut
 import { STLExporter } from 'three/examples/jsm/exporters/STLExporter.js';
 import * as THREE from 'three';
 import { showSuccess, showError } from '@/utils/toast';
-import { Box, Zap, ArrowLeft, Info } from 'lucide-react';
+import { Zap, ArrowLeft, Info, Sparkles } from 'lucide-react';
 
 const LithophaneGenerator = () => {
   const [params, setParams] = useState<LithophaneParams>({
     type: 'flat',
     width: 10,
     height: 10,
-    minThickness: 0.8,
-    maxThickness: 3.0,
+    minThickness: 0.4,
+    maxThickness: 2.8,
+    baseThickness: 0.8,
     curveRadius: 15,
-    resolution: 150,
+    resolution: 180,
     inverted: false,
+    brightness: 0,
+    contrast: 20,
+    sharpness: 0,
   });
 
   const [imageData, setImageData] = useState<ImageData | null>(null);
@@ -34,12 +38,30 @@ const LithophaneGenerator = () => {
       setIsProcessing(true);
       const data = await getImageData(file);
       setImageData(data);
-      showSuccess("Image uploaded successfully!");
+      showSuccess("Image processed for 3D relief!");
     } catch (err) {
       showError("Failed to process image");
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const handleApplyPreset = (preset: string) => {
+    switch (preset) {
+      case 'portrait':
+        setParams({ ...params, width: 8, height: 10, resolution: 200, contrast: 30 });
+        break;
+      case 'landscape':
+        setParams({ ...params, width: 15, height: 10, resolution: 200, contrast: 25 });
+        break;
+      case 'keychain':
+        setParams({ ...params, width: 4, height: 4, resolution: 100, baseThickness: 1.2, maxThickness: 2.0 });
+        break;
+      case 'high_detail':
+        setParams({ ...params, resolution: 300, contrast: 40 });
+        break;
+    }
+    showSuccess(`Applied ${preset} preset`);
   };
 
   useEffect(() => {
@@ -66,7 +88,7 @@ const LithophaneGenerator = () => {
       link.download = `lithophane-${Date.now()}.stl`;
       link.click();
       URL.revokeObjectURL(url);
-      showSuccess("STL file exported successfully!");
+      showSuccess("Watertight STL exported!");
     } catch (err) {
       showError("Failed to export STL");
     }
@@ -80,11 +102,11 @@ const LithophaneGenerator = () => {
             <ArrowLeft className="w-5 h-5 text-slate-600" />
           </Link>
           <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-indigo-200">
-            <Zap className="w-6 h-6" fill="currentColor" />
+            <Sparkles className="w-6 h-6" fill="currentColor" />
           </div>
           <div>
             <h1 className="text-lg font-bold text-slate-900 leading-none">ShadeBuilder</h1>
-            <p className="text-xs text-slate-500 font-medium">Lithophane Generator</p>
+            <p className="text-xs text-slate-500 font-medium">Pro Lithophane Studio</p>
           </div>
         </div>
       </header>
@@ -95,10 +117,12 @@ const LithophaneGenerator = () => {
           
           {!imageData && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="bg-slate-900/80 backdrop-blur-md p-6 rounded-2xl border border-slate-700 text-center max-w-md">
-                <Info className="w-12 h-12 text-indigo-400 mx-auto mb-4" />
-                <h3 className="text-white font-bold text-lg mb-2">No Image Uploaded</h3>
-                <p className="text-slate-400 text-sm">Upload a photo in the control panel to generate your 3D lithophane preview.</p>
+              <div className="bg-slate-900/80 backdrop-blur-md p-8 rounded-3xl border border-slate-700 text-center max-w-md">
+                <div className="w-16 h-16 bg-indigo-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <ImageIcon className="w-8 h-8 text-indigo-400" />
+                </div>
+                <h3 className="text-white font-bold text-xl mb-2">Ready to Generate</h3>
+                <p className="text-slate-400 text-sm leading-relaxed">Upload a high-contrast photo to begin. For best results, use images with clear subjects and distinct lighting.</p>
               </div>
             </div>
           )}
@@ -110,13 +134,14 @@ const LithophaneGenerator = () => {
             setParams={setParams} 
             onImageUpload={handleImageUpload}
             onExport={handleExport}
+            onApplyPreset={handleApplyPreset}
             isProcessing={isProcessing}
           />
         </div>
       </main>
 
       <footer className="py-4 border-t border-slate-200 bg-white text-center">
-        <p className="text-xs text-slate-400">© {new Date().getFullYear()} LightCharm 3D. All rights reserved.</p>
+        <p className="text-xs text-slate-400">© {new Date().getFullYear()} LightCharm 3D. Optimized for FDM & Resin Printing.</p>
       </footer>
     </div>
   );
