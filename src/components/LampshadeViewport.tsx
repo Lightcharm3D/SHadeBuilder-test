@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { LampshadeParams, generateLampshadeGeometry } from '@/utils/geometry-generator';
 
 interface ViewportProps {
@@ -16,75 +16,68 @@ const LampshadeViewport: React.FC<ViewportProps> = ({ params, showWireframe = fa
   const sceneRef = useRef<THREE.Scene | null>(null);
   const meshRef = useRef<THREE.Mesh | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
-  const bedRef = useRef<THREE.Group | null>(null);
+  const requestRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
 
     // Scene setup
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0f172a); // Darker, more technical background
+    scene.background = new THREE.Color(0x0f172a);
     sceneRef.current = scene;
 
-    const camera = new THREE.PerspectiveCamera(
-      50,
-      containerRef.current.clientWidth / containerRef.current.clientHeight,
-      0.1,
-      1000
-    );
-    camera.position.set(25, 25, 25);
+    const width = containerRef.current.clientWidth || 800;
+    const height = containerRef.current.clientHeight || 600;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(containerRef.current.clientWidth, containerRef.current.clientHeight);
-    renderer.setPixelRatio(window.devicePixelRatio);
+    const camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 1000);
+    camera.position.set(30, 30, 30);
+    camera.lookAt(0, 0, 0);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(width, height);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
     containerRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // Lighting - Technical/Studio setup
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+    // Lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
     scene.add(ambientLight);
 
-    const mainLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    const mainLight = new THREE.DirectionalLight(0xffffff, 1);
     mainLight.position.set(20, 40, 20);
     mainLight.castShadow = true;
     scene.add(mainLight);
 
-    const fillLight = new THREE.DirectionalLight(0x6366f1, 0.3); // Subtle indigo tint
+    const fillLight = new THREE.PointLight(0x6366f1, 0.5);
     fillLight.position.set(-20, 10, -20);
     scene.add(fillLight);
 
-    // Print Bed Visualization
-    const bed = new THREE.Group();
+    // Print Bed
+    const bedGroup = new THREE.Group();
     const bedSize = 40;
-    const bedGeometry = new THREE.PlaneGeometry(bedSize, bedSize);
-    const bedMaterial = new THREE.MeshStandardMaterial({ 
-      color: 0x1e293b, 
-      roughness: 0.8,
-      metalness: 0.2
-    });
-    const bedMesh = new THREE.Mesh(bedGeometry, bedMaterial);
-    bedMesh.rotation.x = -Math.PI / 2;
-    bedMesh.receiveShadow = true;
-    bed.add(bedMesh);
+    const bedGeom = new THREE.PlaneGeometry(bedSize, bedSize);
+    const bedMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8 });
+    const bed = new THREE.Mesh(bedGeom, bedMat);
+    bed.rotation.x = -Math.PI / 2;
+    bed.receiveShadow = true;
+    bedGroup.add(bed);
 
-    // Grid on bed
     const grid = new THREE.GridHelper(bedSize, 20, 0x475569, 0x334155);
     grid.position.y = 0.01;
-    bed.add(grid);
-    
-    scene.add(bed);
-    bedRef.current = bed;
+    bedGroup.add(grid);
+    scene.add(bedGroup);
 
     // Controls
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
-    controls.maxPolarAngle = Math.PI / 2; // Don't go below the bed
+    controls.dampingFactor = 0.05;
+    controls.maxPolarAngle = Math.PI / 1.8;
 
     // Initial Mesh
     const geometry = generateLampshadeGeometry(params);
     const material = new THREE.MeshStandardMaterial({
-      color: 0xe2e8f0, // Light gray "STL" look
+      color: 0xe2e8f0,
       side: THREE.DoubleSide,
       roughness: 0.4,
       metalness: 0.1,
@@ -93,55 +86,54 @@ const LampshadeViewport: React.FC<ViewportProps> = ({ params, showWireframe = fa
     const mesh = new THREE.Mesh(geometry, material);
     mesh.castShadow = true;
     mesh.receiveShadow = true;
+    mesh.position.y = params.height / 2;
     scene.add(mesh);
     meshRef.current = mesh;
 
     if (onSceneReady) onSceneReady(scene, mesh);
 
-    // Animation loop
     const animate = () => {
-      requestAnimationFrame(animate);
       controls.update();
       renderer.render(scene, camera);
+      requestRef.current = requestAnimationFrame(animate);
     };
-    animate();
+    requestRef.current = requestAnimationFrame(animate);
 
-    // Resize handler
     const handleResize = () => {
       if (!containerRef.current) return;
-      camera.aspect = containerRef.current.clientWidth / containerRef.current.clientHeight;
+      const w = containerRef.current.clientWidth;
+      const h = containerRef.current.clientHeight;
+      camera.aspect = w / h;
       camera.updateProjectionMatrix();
-      renderer.setSize(containerRef.current.clientWidth, containerRef.current.clientHeight);
+      renderer.setSize(w, h);
     };
     window.addEventListener('resize', handleResize);
 
     return () => {
       window.removeEventListener('resize', handleResize);
+      if (requestRef.current) cancelAnimationFrame(requestRef.current);
       renderer.dispose();
-      if (containerRef.current) {
+      if (containerRef.current && renderer.domElement) {
         containerRef.current.removeChild(renderer.domElement);
       }
     };
   }, []);
 
-  // Update geometry and position when params change
+  // Update geometry
   useEffect(() => {
     if (meshRef.current) {
-      const newGeometry = generateLampshadeGeometry(params);
+      const newGeom = generateLampshadeGeometry(params);
       meshRef.current.geometry.dispose();
-      meshRef.current.geometry = newGeometry;
-      
-      // Position mesh so it sits on the bed
+      meshRef.current.geometry = newGeom;
       meshRef.current.position.y = params.height / 2;
       
-      // Update wireframe
       if (meshRef.current.material instanceof THREE.MeshStandardMaterial) {
         meshRef.current.material.wireframe = showWireframe;
       }
     }
   }, [params, showWireframe]);
 
-  return <div ref={containerRef} className="w-full h-full rounded-xl overflow-hidden border border-slate-800 shadow-2xl bg-slate-950" />;
+  return <div ref={containerRef} className="w-full h-full min-h-[400px] rounded-xl overflow-hidden bg-slate-950" />;
 };
 
 export default LampshadeViewport;

@@ -4,7 +4,7 @@ import React, { useState, useRef } from 'react';
 import LampshadeViewport from '@/components/LampshadeViewport';
 import ControlPanel from '@/components/ControlPanel';
 import { LampshadeParams, LampshadeType } from '@/utils/geometry-generator';
-import { STLExporter } from 'three/examples/jsm/exporters/STLExporter';
+import { STLExporter } from 'three/examples/jsm/exporters/STLExporter.js';
 import * as THREE from 'three';
 import { showSuccess, showError } from '@/utils/toast';
 import { MadeWithDyad } from '@/components/made-with-dyad';
@@ -69,7 +69,6 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
-      {/* Header */}
       <header className="h-16 border-b border-slate-200 bg-white px-6 flex items-center justify-between shrink-0 z-10">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-indigo-200">
@@ -93,18 +92,15 @@ const Index = () => {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="flex-1 flex flex-col md:flex-row p-4 md:p-6 gap-6 overflow-hidden">
-        {/* Viewport Area */}
-        <div className="flex-1 relative min-h-[400px] group">
+        <div className="flex-1 relative min-h-[400px] bg-slate-950 rounded-xl shadow-2xl border border-slate-800">
           <LampshadeViewport 
             params={params} 
             showWireframe={showWireframe}
             onSceneReady={handleSceneReady} 
           />
           
-          {/* Overlay Info */}
-          <div className="absolute top-6 left-6 flex flex-col gap-2">
+          <div className="absolute top-6 left-6 flex flex-col gap-2 pointer-events-none">
             <div className="bg-slate-900/80 backdrop-blur-md p-3 rounded-lg border border-slate-700 shadow-xl">
               <div className="flex items-center gap-2 text-indigo-400 mb-2">
                 <Ruler className="w-4 h-4" />
@@ -116,13 +112,8 @@ const Index = () => {
               </div>
             </div>
           </div>
-
-          <div className="absolute bottom-6 right-6 bg-white/10 backdrop-blur-sm p-2 rounded-md border border-white/10 text-[10px] text-white/50 uppercase tracking-tighter">
-            Real-time STL Preview Engine v1.0
-          </div>
         </div>
 
-        {/* Controls Area */}
         <div className="w-full md:w-[380px] shrink-0">
           <ControlPanel 
             params={params} 
