@@ -40,6 +40,8 @@ const DEFAULT_PARAMS: LampshadeParams = {
   fitterType: 'spider',
   fitterDiameter: 27,
   fitterHeight: 3,
+  spokeThickness: 0.2,
+  spokeWidth: 0.3,
 };
 
 const DEFAULT_MATERIAL: MaterialParams = {

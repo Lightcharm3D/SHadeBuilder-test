@@ -35,6 +35,8 @@ export interface LampshadeParams {
   fitterType: FitterType;
   fitterDiameter: number;
   fitterHeight: number; 
+  spokeThickness: number;
+  spokeWidth: number;
   
   // Type-specific params
   ribCount?: number;
@@ -317,7 +319,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
 }
 
 function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
-  const { fitterType, fitterDiameter, fitterHeight, height, thickness, type, sides = 6 } = params;
+  const { fitterType, fitterDiameter, fitterHeight, height, thickness, type, sides = 6, spokeThickness, spokeWidth } = params;
   const geoms: THREE.BufferGeometry[] = [];
   const fitterRadius = fitterDiameter / 20; 
   const yPos = height / 2 - fitterHeight;
@@ -351,11 +353,7 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
     const targetRadius = (baseRadius + disp) - safetyMargin;
     const spokeLength = Math.max(0.1, targetRadius - fitterRadius);
     
-    // Spoke width is now dynamic: 70% of wall thickness (max 0.25)
-    // This prevents the spoke from being wider than the wall it connects to
-    const spokeWidth = Math.min(0.25, thickness * 0.7);
-    
-    const spoke = new THREE.BoxGeometry(spokeLength, 0.2, spokeWidth);
+    const spoke = new THREE.BoxGeometry(spokeLength, spokeThickness, spokeWidth);
     spoke.translate(fitterRadius + spokeLength / 2, yPos, 0);
     spoke.rotateY(angle);
     geoms.push(spoke);

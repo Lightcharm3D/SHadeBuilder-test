@@ -10,7 +10,7 @@ import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LampshadeParams, FitterType, SilhouetteType } from '@/utils/geometry-generator';
 import { MaterialParams } from './LampshadeViewport';
-import { Download, RefreshCw, Eye, Box, Settings2, Hash, Sparkles, RotateCcw, Anchor, Palette, Layers, Ruler, Sliders, Star, Save, History, Trash2, Weight, MoveVertical, ShieldAlert } from 'lucide-react';
+import { Download, RefreshCw, Eye, Box, Settings2, Hash, Sparkles, RotateCcw, Anchor, Palette, Layers, Ruler, Sliders, Star, Save, History, Trash2, Weight, MoveVertical, ShieldAlert, Maximize2 } from 'lucide-react';
 import { showSuccess } from '@/utils/toast';
 
 interface ControlPanelProps {
@@ -251,7 +251,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                     onValueChange={([v]) => updateParam('fitterHeight', v)} 
                     className="py-1" 
                   />
-                  <p className="text-[9px] text-slate-400 italic">Distance from the top of the shade</p>
                 </div>
 
                 <div className="space-y-1.5">
@@ -262,6 +261,42 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                     onChange={(e) => updateParam('fitterDiameter', parseFloat(e.target.value))} 
                     className="h-8 text-xs font-mono" 
                   />
+                </div>
+
+                <div className="space-y-3 pt-2 border-t border-slate-200">
+                  <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                    <Anchor className="w-3 h-3" /> Spoke Strength
+                  </Label>
+                  
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between text-[9px] font-medium text-slate-500">
+                      <span>Vertical Thickness</span>
+                      <span>{params.spokeThickness.toFixed(2)} cm</span>
+                    </div>
+                    <Slider 
+                      value={[params.spokeThickness]} 
+                      min={0.1} 
+                      max={0.8} 
+                      step={0.05} 
+                      onValueChange={([v]) => updateParam('spokeThickness', v)} 
+                      className="py-1" 
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between text-[9px] font-medium text-slate-500">
+                      <span>Horizontal Width</span>
+                      <span>{params.spokeWidth.toFixed(2)} cm</span>
+                    </div>
+                    <Slider 
+                      value={[params.spokeWidth]} 
+                      min={0.1} 
+                      max={1.0} 
+                      step={0.05} 
+                      onValueChange={([v]) => updateParam('spokeWidth', v)} 
+                      className="py-1" 
+                    />
+                  </div>
                 </div>
               </div>
             )}
