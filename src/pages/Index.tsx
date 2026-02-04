@@ -8,8 +8,9 @@ import { LampshadeParams, LampshadeType, SilhouetteType } from '@/utils/geometry
 import { STLExporter } from 'three/examples/jsm/exporters/STLExporter.js';
 import * as THREE from 'three';
 import { showSuccess, showError } from '@/utils/toast';
-import { Ruler, Image as ImageIcon, Box, Lightbulb, ChevronRight, Weight, Sparkles, Cpu, Activity } from 'lucide-react';
+import { Ruler, Image as ImageIcon, Box, Lightbulb, ChevronRight, Weight, Sparkles, Cpu, Activity, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 const DEFAULT_PARAMS: LampshadeParams = {
   type: 'ribbed_drum',
@@ -198,17 +199,41 @@ const Index = () => {
             © {new Date().getFullYear()} LightCharm 3D Studio
           </p>
           <div className="h-5 w-px bg-slate-200" />
-          <div className="flex gap-6">
+          <div className="flex items-center gap-3">
+            <div className="flex -space-x-2">
+              <Avatar className="w-6 h-6 border-2 border-white shadow-sm">
+                <AvatarImage src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=64&h=64&fit=crop" />
+                <AvatarFallback>AD</AvatarFallback>
+              </Avatar>
+              <Avatar className="w-6 h-6 border-2 border-white shadow-sm">
+                <AvatarImage src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=64&h=64&fit=crop" />
+                <AvatarFallback>JD</AvatarFallback>
+              </Avatar>
+            </div>
             <span className="text-[10px] text-slate-300 font-bold uppercase tracking-widest">Geometry Engine v2.6.0-PREMIUM</span>
           </div>
         </div>
         <div className="flex items-center gap-8">
-          <div className="flex -space-x-3">
-            {[1,2,3,4].map(i => (
-              <div key={i} className="w-7 h-7 rounded-full border-2 border-white bg-slate-100 shadow-sm" />
-            ))}
+          <div className="flex items-center gap-3">
+            <div className="flex -space-x-3">
+              <Avatar className="w-7 h-7 border-2 border-white shadow-sm">
+                <AvatarImage src="https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=64&h=64&fit=crop" />
+                <AvatarFallback>U1</AvatarFallback>
+              </Avatar>
+              <Avatar className="w-7 h-7 border-2 border-white shadow-sm">
+                <AvatarImage src="https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=64&h=64&fit=crop" />
+                <AvatarFallback>U2</AvatarFallback>
+              </Avatar>
+              <Avatar className="w-7 h-7 border-2 border-white shadow-sm">
+                <AvatarImage src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=64&h=64&fit=crop" />
+                <AvatarFallback>U3</AvatarFallback>
+              </Avatar>
+              <div className="w-7 h-7 rounded-full border-2 border-white bg-indigo-50 flex items-center justify-center shadow-sm">
+                <span className="text-[8px] font-black text-indigo-600">+12</span>
+              </div>
+            </div>
+            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">1.5k Designs Exported Today</span>
           </div>
-          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">1.5k Designs Exported Today</span>
         </div>
       </footer>
     </div>
