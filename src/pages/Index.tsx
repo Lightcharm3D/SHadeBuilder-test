@@ -8,7 +8,7 @@ import { LampshadeParams, LampshadeType, SilhouetteType } from '@/utils/geometry
 import { STLExporter } from 'three/examples/jsm/exporters/STLExporter.js';
 import * as THREE from 'three';
 import { showSuccess, showError } from '@/utils/toast';
-import { Zap, Ruler, Image as ImageIcon, Sparkles } from 'lucide-react';
+import { Zap, Ruler, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const DEFAULT_PARAMS: LampshadeParams = {
@@ -17,7 +17,7 @@ const DEFAULT_PARAMS: LampshadeParams = {
   height: 15,
   topRadius: 5,
   bottomRadius: 8,
-  thickness: 0.8,
+  thickness: 0.2,
   segments: 64,
   internalRibs: 0,
   ribThickness: 0.2,
@@ -40,13 +40,9 @@ const DEFAULT_PARAMS: LampshadeParams = {
   fitterType: 'spider',
   fitterDiameter: 27,
   fitterHeight: 3,
-  patternType: 'none',
-  patternScale: 1.0,
-  patternDensity: 5.0,
 };
 
 const DEFAULT_MATERIAL: MaterialParams = {
-  name: 'Matte White PLA',
   color: '#ffffff',
   roughness: 0.8,
   metalness: 0,
@@ -76,7 +72,7 @@ const Index = () => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `shade-${params.type}-${Date.now()}.stl`;
+      link.download = `lampshade-${params.type}-${Date.now()}.stl`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -95,7 +91,7 @@ const Index = () => {
   };
 
   const handleRandomize = () => {
-    const types: LampshadeType[] = ['ribbed_drum', 'spiral_twist', 'voronoi', 'wave_shell', 'geometric_poly', 'lattice', 'origami', 'double_wall'];
+    const types: LampshadeType[] = ['ribbed_drum', 'spiral_twist', 'voronoi', 'wave_shell', 'geometric_poly', 'lattice', 'origami', 'perlin_noise', 'slotted', 'double_wall'];
     const silhouettes: SilhouetteType[] = ['straight', 'hourglass', 'bell', 'convex', 'concave'];
     
     const newType = types[Math.floor(Math.random() * types.length)];
@@ -110,59 +106,56 @@ const Index = () => {
       bottomRadius: 6 + Math.random() * 8,
       seed: Math.random() * 10000,
       internalRibs: Math.random() > 0.7 ? Math.floor(Math.random() * 8) : 0,
-      patternType: Math.random() > 0.5 ? 'none' : ['stars', 'hearts', 'hexagons', 'dots'][Math.floor(Math.random() * 4)] as any,
     });
     
     showSuccess("New design generated!");
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans selection:bg-indigo-100 selection:text-indigo-900">
-      <header className="h-16 border-b border-slate-200 bg-white/80 backdrop-blur-md px-6 flex items-center justify-between shrink-0 z-20 sticky top-0">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-xl shadow-indigo-200 rotate-3 hover:rotate-0 transition-transform duration-300">
-            <Zap className="w-5 h-5" fill="currentColor" />
+    <div className="min-h-screen bg-slate-50 flex flex-col">
+      <header className="h-14 border-b border-slate-200 bg-white px-4 flex items-center justify-between shrink-0 z-10">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-indigo-200">
+            <Zap className="w-4 h-4" fill="currentColor" />
           </div>
           <div>
-            <h1 className="text-lg font-black text-slate-900 leading-none tracking-tight">ShadeBuilder</h1>
-            <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mt-0.5">by LightCharm 3D</p>
+            <h1 className="text-base font-bold text-slate-900 leading-none">ShadeBuilder</h1>
+            <p className="text-[10px] text-slate-500 font-medium">by LightCharm 3D</p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <Link to="/lithophane">
-            <Button variant="outline" size="sm" className="gap-2 border-indigo-100 text-indigo-600 hover:bg-indigo-50 h-10 px-4 rounded-xl font-bold text-xs transition-all hover:scale-105">
-              <ImageIcon className="w-4 h-4" />
-              Lithophane Studio
+            <Button variant="outline" size="sm" className="gap-1 border-indigo-100 text-indigo-600 hover:bg-indigo-50 h-8 px-2 text-xs">
+              <ImageIcon className="w-3 h-3" />
+              Lithophane
             </Button>
           </Link>
         </div>
       </header>
       
-      <main className="flex-1 flex flex-col lg:flex-row p-4 gap-6 overflow-hidden max-w-[1600px] mx-auto w-full">
-        <div className="flex-1 relative min-h-[400px] bg-slate-950 rounded-[2rem] shadow-2xl border border-slate-800 overflow-hidden group">
+      <main className="flex-1 flex flex-col p-2 gap-4 overflow-hidden">
+        <div className="flex-1 relative min-h-[300px] bg-slate-950 rounded-xl shadow-lg border border-slate-800">
           <LampshadeViewport 
             params={params} 
             material={material}
             showWireframe={showWireframe} 
             onSceneReady={handleSceneReady} 
           />
-          
-          <div className="absolute top-6 left-6 flex flex-col gap-3 pointer-events-none">
-            <div className="bg-slate-900/60 backdrop-blur-xl p-4 rounded-2xl border border-white/10 shadow-2xl animate-in fade-in slide-in-from-left-4 duration-500">
-              <div className="flex items-center gap-2 text-indigo-400 mb-2">
-                <Sparkles className="w-4 h-4" />
-                <span className="text-[10px] font-black uppercase tracking-widest">Live Geometry</span>
+          <div className="absolute top-3 left-3 flex flex-col gap-1 pointer-events-none">
+            <div className="bg-slate-900/80 backdrop-blur-sm p-2 rounded-lg border border-slate-700 shadow-lg">
+              <div className="flex items-center gap-1 text-indigo-400 mb-1">
+                <Ruler className="w-3 h-3" />
+                <span className="text-[9px] font-bold uppercase tracking-wider">Dimensions</span>
               </div>
-              <div className="space-y-1">
-                <div className="text-[11px] text-slate-300 font-medium">Height: <span className="font-mono text-white font-bold">{params.height * 10}mm</span></div>
-                <div className="text-[11px] text-slate-300 font-medium">Max Width: <span className="font-mono text-white font-bold">{Math.max(params.topRadius, params.bottomRadius) * 20}mm</span></div>
-                <div className="text-[11px] text-slate-300 font-medium">Pattern: <span className="font-mono text-indigo-400 font-bold uppercase">{params.patternType}</span></div>
+              <div className="grid grid-cols-1 gap-0.5">
+                <div className="text-[9px] text-slate-300">Height: <span className="font-mono text-white">{params.height * 10}mm</span></div>
+                <div className="text-[9px] text-slate-300">Max Width: <span className="font-mono text-white">{Math.max(params.topRadius, params.bottomRadius) * 20}mm</span></div>
               </div>
             </div>
           </div>
         </div>
         
-        <div className="w-full lg:w-[400px] shrink-0">
+        <div className="w-full">
           <ControlPanel 
             params={params} 
             setParams={setParams} 
@@ -177,9 +170,9 @@ const Index = () => {
         </div>
       </main>
       
-      <footer className="py-4 border-t border-slate-200 bg-white text-center">
-        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-          © {new Date().getFullYear()} LightCharm 3D • Professional 3D Printing Solutions
+      <footer className="py-2 border-t border-slate-200 bg-white text-center">
+        <p className="text-[10px] text-slate-400">
+          © {new Date().getFullYear()} LightCharm 3D. All rights reserved.
         </p>
       </footer>
     </div>
