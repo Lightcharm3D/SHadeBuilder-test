@@ -4,7 +4,7 @@ import React, { useState, useRef } from 'react';
 import LampshadeViewport from '@/components/LampshadeViewport';
 import ControlPanel from '@/components/ControlPanel';
 import { LampshadeParams, LampshadeType } from '@/utils/geometry-generator';
-import { STLExporter } from 'three/examples/jsm/exporters/STLExporter.js';
+import { STLExporter } from 'three/examples/jsm/exporters/STLExporter';
 import * as THREE from 'three';
 import { showSuccess, showError } from '@/utils/toast';
 import { MadeWithDyad } from '@/components/made-with-dyad';
@@ -38,7 +38,7 @@ const Index = () => {
     try {
       const exporter = new STLExporter();
       const result = exporter.parse(meshRef.current);
-      const blob = new Blob([result], { type: 'application/octet-stream' });
+      const blob = new Blob([result as any], { type: 'application/octet-stream' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
