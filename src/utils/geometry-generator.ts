@@ -177,16 +177,17 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       const count = params.slotCount || 16;
       const finThick = params.slotWidth || thickness;
       const geoms: THREE.BufferGeometry[] = [];
-      const coreOffset = 0.8; 
+      const coreScale = 0.8; 
       
       const coreProfile = getClosedProfilePoints(40, thickness);
       const coreGeom = new THREE.LatheGeometry(coreProfile, segments);
-      coreGeom.scale(0.8, 1, 0.8); 
+      coreGeom.scale(coreScale, 1, coreScale); 
       geoms.push(coreGeom);
 
       for (let i = 0; i < count; i++) {
         const angle = (i / count) * Math.PI * 2;
-        const finDepth = coreOffset + 0.5; 
+        const baseR = getRadiusAtHeight(0, params); // Use middle radius for fin depth reference
+        const finDepth = baseR * (1 - coreScale) + 0.5; 
         const finGeom = new THREE.BoxGeometry(finDepth, height, finThick, 1, 32, 1);
         const pos = finGeom.attributes.position;
         for (let j = 0; j < pos.count; j++) {
@@ -194,7 +195,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
           const r = getRadiusAtHeight(py, params);
           const px = pos.getX(j);
           if (px > 0) pos.setX(j, r);
-          else pos.setX(j, r - finDepth + 0.01); 
+          else pos.setX(j, r * coreScale + 0.01); 
         }
         finGeom.rotateY(angle);
         geoms.push(finGeom);
@@ -316,17 +317,16 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
 }
 
 function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
-  const { fitterType, fitterDiameter, fitterHeight, height, thickness, type, sides = 6 } = params;
+  const { fitterType, fitterDiameter, fitterHeight, height, type, sides = 6 } = params;
   const geoms: THREE.BufferGeometry[] = [];
   const fitterRadius = fitterDiameter / 20; 
   const yPos = height / 2 - fitterHeight;
   
-  // Base radius at the fitter's height
   let baseRadius = getRadiusAtHeight(yPos, params);
   
-  // For slotted lamps, the spokes must connect to the inner core, not the outer fins
+  // Match the core scaling used in generateLampshadeGeometry
   if (type === 'slotted') {
-    baseRadius -= 0.8; // Match the coreOffset used in generateLampshadeGeometry
+    baseRadius *= 0.8; 
   }
 
   const ring = new THREE.TorusGeometry(fitterRadius, 0.15, 8, 32);
@@ -335,23 +335,21 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
   geoms.push(ring);
   
   const spokeCount = fitterType === 'spider' ? 3 : 4;
-  const PENETRATION_DEPTH = 0.2; // Ensure spoke goes INTO the wall for manifold geometry
+  const SURFACE_BUFFER = 0.02; // 0.2mm buffer to prevent poking through the outer surface
 
   for (let i = 0; i < spokeCount; i++) {
     let angle = (i / spokeCount) * Math.PI * 2;
     
-    // For faceted shapes, align spokes to vertices for strength
     if (type === 'geometric_poly') {
       const step = (Math.PI * 2) / sides;
       angle = Math.round(angle / step) * step;
     }
 
     const disp = getDisplacementAt(angle, yPos, params);
-    // Target radius is the inner wall surface + penetration
-    const targetRadius = baseRadius + disp - (type === 'slotted' ? 0 : thickness/2) + PENETRATION_DEPTH;
+    // Target radius is just inside the outer surface
+    const targetRadius = baseRadius + disp - SURFACE_BUFFER;
     const spokeLength = Math.max(0.1, targetRadius - fitterRadius);
     
-    // Increased vertical thickness (0.2) for better connection area
     const spoke = new THREE.BoxGeometry(spokeLength, 0.2, 0.3);
     spoke.translate(fitterRadius + spokeLength / 2, yPos, 0);
     spoke.rotateY(angle);
