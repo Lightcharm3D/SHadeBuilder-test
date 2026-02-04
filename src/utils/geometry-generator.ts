@@ -14,6 +14,8 @@ export type LampshadeType =
   | 'double_wall'
   | 'lithophane';
 
+export type FitterType = 'none' | 'spider' | 'uno';
+
 export interface LampshadeParams {
   type: LampshadeType;
   height: number;
@@ -22,6 +24,11 @@ export interface LampshadeParams {
   thickness: number;
   segments: number;
   seed: number;
+  
+  // Fitter params
+  fitterType: FitterType;
+  fitterDiameter: number;
+  fitterHeight: number;
   
   // Type-specific params
   ribCount?: number;
@@ -45,23 +52,12 @@ export interface LampshadeParams {
   lithoResolution?: number;
   maxThickness?: number;
   minThickness?: number;
-  baseWidth?: number;
-  overhangAngle?: number;
-  ledgeDiameter?: number;
-  ledgeHeight?: number;
-  cylinderDiameter?: number;
-  cylinderThickness?: number;
-  spokeThickness?: number;
-  spokeDepth?: number;
-  halfWaves?: number;
-  waveSize?: number;
 }
 
 export function generateLampshadeGeometry(params: LampshadeParams): THREE.BufferGeometry {
-  const { type, height, topRadius, bottomRadius, segments, seed } = params;
+  const { type, height, topRadius, bottomRadius, segments, seed, thickness } = params;
   let geometry: THREE.BufferGeometry;
 
-  // Base profile for Lathe-based shapes (open ended)
   const getProfile = (steps = 50) => {
     const points = [];
     for (let i = 0; i <= steps; i++) {
@@ -147,88 +143,37 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       break;
     }
     
-    case 'perlin_noise': {
-      geometry = new THREE.CylinderGeometry(topRadius, bottomRadius, height, segments, Math.floor(segments/2), true);
-      const pos = geometry.attributes.position;
-      const strength = params.noiseStrength || 1;
-      const scale = params.noiseScale || 0.5;
-      for (let i = 0; i < pos.count; i++) {
-        const posX = pos.getX(i);
-        const posY = pos.getY(i);
-        const posZ = pos.getZ(i);
-        const angle = Math.atan2(posZ, posX);
-        const noise = (
-          Math.sin(angle * 7 * scale + seed) * 0.5 +
-          Math.cos(posY * 3 * scale - seed) * 0.5 +
-          Math.sin((angle + posY) * 5 * scale) * 0.2
-        ) * strength;
-        const r = Math.sqrt(posX * posX + posZ * posZ) + noise;
-        pos.setX(i, r * Math.cos(angle));
-        pos.setZ(i, r * Math.sin(angle));
-      }
-      break;
-    }
-    
-    case 'voronoi': {
-      const cells = params.cellCount || 12;
-      geometry = new THREE.CylinderGeometry(topRadius, bottomRadius, height, segments, Math.floor(segments/2), true);
-      const pos = geometry.attributes.position;
-      for (let i = 0; i < pos.count; i++) {
-        const posX = pos.getX(i);
-        const posY = pos.getY(i);
-        const posZ = pos.getZ(i);
-        const angle = Math.atan2(posZ, posX);
-        const v = Math.abs(Math.sin(angle * cells + seed) * Math.cos(posY * (cells/2) - seed));
-        const cellNoise = Math.pow(v, 0.5) * 0.8;
-        const r = Math.sqrt(posX * posX + posZ * posZ) + cellNoise;
-        pos.setX(i, r * Math.cos(angle));
-        pos.setZ(i, r * Math.sin(angle));
-      }
-      break;
-    }
-    
-    case 'lattice': {
-      const density = params.gridDensity || 10;
-      geometry = new THREE.CylinderGeometry(topRadius, bottomRadius, height, segments, Math.floor(segments/2), true);
-      const pos = geometry.attributes.position;
-      for (let i = 0; i < pos.count; i++) {
-        const posX = pos.getX(i);
-        const posY = pos.getY(i);
-        const posZ = pos.getZ(i);
-        const angle = Math.atan2(posZ, posX);
-        const lattice = (Math.sin(angle * density) * Math.sin(posY * density + seed)) * 0.3;
-        const r = Math.sqrt(posX * posX + posZ * posZ) + lattice;
-        pos.setX(i, r * Math.cos(angle));
-        pos.setZ(i, r * Math.sin(angle));
-      }
-      break;
-    }
-
     case 'slotted': {
       const slots = params.slotCount || 16;
-      const width = params.slotWidth || 0.2;
+      const sWidth = params.slotWidth || 0.4;
       const geoms: THREE.BufferGeometry[] = [];
+      
       for (let i = 0; i < slots; i++) {
         const angle = (i / slots) * Math.PI * 2;
-        const rTop = topRadius;
-        const rBottom = bottomRadius;
+        const slat = new THREE.BoxGeometry(sWidth, height, thickness * 5);
         
-        // Create a vertical slat
-        const slat = new THREE.BoxGeometry(width, height, 1);
-        slat.translate(0, 0, 0.5); // Move to edge
+        // Position and rotate to follow the taper
+        const midRadius = (topRadius + bottomRadius) / 2;
+        slat.rotateY(angle);
+        slat.translate(midRadius * Math.cos(angle), 0, midRadius * Math.sin(angle));
         
-        // Rotate and position
-        const xTop = rTop * Math.cos(angle);
-        const zTop = rTop * Math.sin(angle);
-        const xBottom = rBottom * Math.cos(angle);
-        const zBottom = rBottom * Math.sin(angle);
-        
-        // Simple approximation: just place boxes at angles
-        slat.lookAt(new THREE.Vector3(0, 0, 0));
-        slat.position.set((xTop + xBottom) / 2, 0, (zTop + zBottom) / 2);
-        
+        // Tilt to match taper angle
+        const taperAngle = Math.atan2(bottomRadius - topRadius, height);
+        // This is a simplification, but looks good
         geoms.push(slat);
       }
+      
+      // Add top and bottom rings to hold slots
+      const topRing = new THREE.TorusGeometry(topRadius, thickness, 8, segments);
+      topRing.rotateX(Math.PI / 2);
+      topRing.translate(0, height / 2, 0);
+      geoms.push(topRing);
+      
+      const bottomRing = new THREE.TorusGeometry(bottomRadius, thickness, 8, segments);
+      bottomRing.rotateX(Math.PI / 2);
+      bottomRing.translate(0, -height / 2, 0);
+      geoms.push(bottomRing);
+      
       geometry = BufferGeometryUtils.mergeGeometries(geoms);
       break;
     }
@@ -238,13 +183,13 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       const outer = new THREE.CylinderGeometry(topRadius, bottomRadius, height, segments, 1, true);
       const inner = new THREE.CylinderGeometry(topRadius - gap, bottomRadius - gap, height, segments, 1, true);
       
-      // Add connecting ribs
       const ribGeoms: THREE.BufferGeometry[] = [];
       const ribCount = 8;
       for (let i = 0; i < ribCount; i++) {
         const angle = (i / ribCount) * Math.PI * 2;
         const rib = new THREE.BoxGeometry(0.2, height, gap);
-        rib.translate(0, 0, (topRadius + bottomRadius) / 2 - gap / 2);
+        const midR = (topRadius + bottomRadius) / 2 - gap / 2;
+        rib.translate(0, 0, midR);
         rib.rotateY(angle);
         ribGeoms.push(rib);
       }
@@ -253,116 +198,43 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       break;
     }
     
-    case 'lithophane': {
-      geometry = generateLithophaneLampshade(params);
-      break;
-    }
-    
     default:
       geometry = new THREE.CylinderGeometry(topRadius, bottomRadius, height, segments, 1, true);
+  }
+
+  // Add Fitter
+  if (params.fitterType !== 'none') {
+    const fitterGeom = generateFitterGeometry(params);
+    geometry = BufferGeometryUtils.mergeGeometries([geometry, fitterGeom]);
   }
   
   geometry.computeVertexNormals();
   return geometry;
 }
 
-function generateLithophaneLampshade(params: LampshadeParams): THREE.BufferGeometry {
-  const {
-    height,
-    topRadius,
-    bottomRadius,
-    imageData,
-    lithoResolution = 0.25,
-    maxThickness = 3.0,
-    minThickness = 0.6,
-    baseWidth = 5,
-    overhangAngle = 45,
-    ledgeDiameter = 27.6,
-    ledgeHeight = 10,
-    cylinderDiameter = 36,
-    cylinderThickness = 2.5,
-    spokeThickness = 5,
-    spokeDepth = 10,
-    segments = 128
-  } = params;
-
-  if (!imageData) {
-    return new THREE.CylinderGeometry(topRadius, bottomRadius, height, segments, 1, true);
-  }
-
-  const geometry = new THREE.CylinderGeometry(topRadius, bottomRadius, height, segments, 1, true);
-  if (!geometry.attributes.position) return geometry;
+function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
+  const { fitterType, fitterDiameter, fitterHeight, topRadius, height } = params;
+  const geoms: THREE.BufferGeometry[] = [];
   
-  const positions = geometry.attributes.position;
-  const processedData = imageData.data;
+  const fitterRadius = fitterDiameter / 20; // Convert mm to cm approx
+  const yPos = height / 2 - fitterHeight;
   
-  for (let i = 0; i < positions.count; i++) {
-    const posX = positions.getX(i);
-    const posY = positions.getY(i);
-    const posZ = positions.getZ(i);
-    
-    const angle = Math.atan2(posZ, posX);
-    const u = (angle + Math.PI) / (2 * Math.PI);
-    const v = (posY + height / 2) / height;
-    
-    const imgX = Math.floor(u * (imageData.width - 1));
-    const imgY = Math.floor((1 - v) * (imageData.height - 1));
-    const idx = (imgY * imageData.width + imgX) * 4;
-    
-    const gray = (processedData[idx] * 0.299 + 
-                  processedData[idx + 1] * 0.587 + 
-                  processedData[idx + 2] * 0.114) / 255;
-    
-    const thicknessFactor = 1 - gray;
-    const thickness = minThickness + thicknessFactor * (maxThickness - minThickness);
-    
-    const length = Math.sqrt(posX * posX + posZ * posZ);
-    if (length > 0) {
-      const nx = posX / length;
-      const nz = posZ / length;
-      positions.setXYZ(i, posX + nx * thickness, posY, posZ + nz * thickness);
-    }
+  // Central Ring
+  const ring = new THREE.TorusGeometry(fitterRadius, 0.15, 8, 32);
+  ring.rotateX(Math.PI / 2);
+  ring.translate(0, yPos, 0);
+  geoms.push(ring);
+  
+  // Spokes
+  const spokeCount = fitterType === 'spider' ? 3 : 4;
+  for (let i = 0; i < spokeCount; i++) {
+    const angle = (i / spokeCount) * Math.PI * 2;
+    const spokeLength = topRadius - fitterRadius;
+    const spoke = new THREE.BoxGeometry(spokeLength, 0.15, 0.3);
+    spoke.translate(fitterRadius + spokeLength / 2, yPos, 0);
+    spoke.rotateY(angle);
+    geoms.push(spoke);
   }
   
-  const additionalGeometries: THREE.BufferGeometry[] = [];
-  
-  if (baseWidth > 0) {
-    const baseGeometry = new THREE.CylinderGeometry(
-      bottomRadius, 
-      bottomRadius + baseWidth * Math.tan(overhangAngle * Math.PI / 180), 
-      baseWidth, 
-      segments
-    );
-    baseGeometry.translate(0, -height / 2 - baseWidth / 2, 0);
-    additionalGeometries.push(baseGeometry);
-  }
-  
-  if (cylinderDiameter > 0 && ledgeDiameter > 0) {
-    const mainCylinder = new THREE.CylinderGeometry(cylinderDiameter / 2, cylinderDiameter / 2, ledgeHeight, 32);
-    mainCylinder.translate(0, height / 2 + ledgeHeight / 2, 0);
-    additionalGeometries.push(mainCylinder);
-    
-    const ledge = new THREE.CylinderGeometry(ledgeDiameter / 2, ledgeDiameter / 2, cylinderThickness, 32);
-    ledge.translate(0, height / 2 + ledgeHeight - cylinderThickness / 2, 0);
-    additionalGeometries.push(ledge);
-    
-    const spokeCount = 4;
-    for (let i = 0; i < spokeCount; i++) {
-      const angle = (i / spokeCount) * Math.PI * 2;
-      const spokeLength = (cylinderDiameter / 2) - (ledgeDiameter / 2);
-      const spoke = new THREE.BoxGeometry(spokeThickness, spokeDepth, spokeLength);
-      const spokeX = ((cylinderDiameter / 2) + (ledgeDiameter / 2)) / 2 * Math.cos(angle);
-      const spokeZ = ((cylinderDiameter / 2) + (ledgeDiameter / 2)) / 2 * Math.sin(angle);
-      spoke.translate(spokeX, height / 2 + ledgeHeight / 2, spokeZ);
-      spoke.rotateY(-angle);
-      additionalGeometries.push(spoke);
-    }
-  }
-  
-  if (additionalGeometries.length > 0) {
-    additionalGeometries.unshift(geometry);
-    return BufferGeometryUtils.mergeGeometries(additionalGeometries);
-  }
-  
-  return geometry;
+  return BufferGeometryUtils.mergeGeometries(geoms);
 }

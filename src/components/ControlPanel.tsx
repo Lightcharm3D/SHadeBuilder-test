@@ -7,8 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
-import { LampshadeParams } from '@/utils/geometry-generator';
-import { Download, RefreshCw, Eye, Box, Settings2, Hash, Sparkles, RotateCcw } from 'lucide-react';
+import { LampshadeParams, FitterType } from '@/utils/geometry-generator';
+import { Download, RefreshCw, Eye, Box, Settings2, Hash, Sparkles, RotateCcw, Anchor } from 'lucide-react';
 
 interface ControlPanelProps {
   params: LampshadeParams;
@@ -161,108 +161,51 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
               />
             </div>
           </div>
+        </div>
 
-          {/* Dynamic Type-Specific Inputs */}
-          <div className="pt-2 border-t border-slate-100">
-            {params.type === 'ribbed_drum' && (
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label className="text-[10px] font-medium text-slate-500">Rib Count</Label>
-                  <Input 
-                    type="number" 
-                    value={params.ribCount} 
-                    onChange={(e) => updateParam('ribCount', parseInt(e.target.value))} 
-                    className="h-9 text-xs font-mono"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-[10px] font-medium text-slate-500">Rib Depth</Label>
-                  <Input 
-                    type="number" 
-                    step={0.1} 
-                    value={params.ribDepth} 
-                    onChange={(e) => updateParam('ribDepth', parseFloat(e.target.value))} 
-                    className="h-9 text-xs font-mono"
-                  />
-                </div>
-              </div>
-            )}
-            
-            {params.type === 'spiral_twist' && (
-              <div className="space-y-1.5">
-                <Label className="text-[10px] font-medium text-slate-500">Twist Angle (deg)</Label>
-                <Input 
-                  type="number" 
-                  value={params.twistAngle} 
-                  onChange={(e) => updateParam('twistAngle', parseFloat(e.target.value))} 
-                  className="h-9 text-xs font-mono"
-                />
-              </div>
-            )}
-            
-            {params.type === 'origami' && (
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label className="text-[10px] font-medium text-slate-500">Fold Count</Label>
-                  <Input 
-                    type="number" 
-                    value={params.foldCount} 
-                    onChange={(e) => updateParam('foldCount', parseInt(e.target.value))} 
-                    className="h-9 text-xs font-mono"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-[10px] font-medium text-slate-500">Fold Depth</Label>
-                  <Input 
-                    type="number" 
-                    step={0.1} 
-                    value={params.foldDepth} 
-                    onChange={(e) => updateParam('foldDepth', parseFloat(e.target.value))} 
-                    className="h-9 text-xs font-mono"
-                  />
-                </div>
-              </div>
-            )}
-            
-            {params.type === 'geometric_poly' && (
-              <div className="space-y-1.5">
-                <Label className="text-[10px] font-medium text-slate-500">Sides</Label>
-                <Input 
-                  type="number" 
-                  min={3} 
-                  max={20} 
-                  value={params.sides} 
-                  onChange={(e) => updateParam('sides', parseInt(e.target.value))} 
-                  className="h-9 text-xs font-mono"
-                />
-              </div>
-            )}
-            
-            {params.type === 'wave_shell' && (
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label className="text-[10px] font-medium text-slate-500">Amplitude</Label>
-                  <Input 
-                    type="number" 
-                    step={0.1} 
-                    value={params.amplitude} 
-                    onChange={(e) => updateParam('amplitude', parseFloat(e.target.value))} 
-                    className="h-9 text-xs font-mono"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-[10px] font-medium text-slate-500">Frequency</Label>
-                  <Input 
-                    type="number" 
-                    step={0.1} 
-                    value={params.frequency} 
-                    onChange={(e) => updateParam('frequency', parseFloat(e.target.value))} 
-                    className="h-9 text-xs font-mono"
-                  />
-                </div>
-              </div>
-            )}
+        <div className="space-y-3 pt-2 border-t border-slate-100">
+          <div className="flex items-center gap-1.5 text-slate-900 mb-1">
+            <Anchor className="w-3.5 h-3.5 text-indigo-600" />
+            <Label className="text-[10px] font-bold uppercase tracking-wider">Lamp Fitter (Hardware)</Label>
           </div>
+          
+          <div className="space-y-1.5">
+            <Label className="text-[10px] font-medium text-slate-500">Fitter Type</Label>
+            <Select value={params.fitterType} onValueChange={(v: FitterType) => updateParam('fitterType', v)}>
+              <SelectTrigger className="bg-slate-50 border-slate-200 h-9 text-xs font-medium">
+                <SelectValue placeholder="Select fitter" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none" className="text-xs">None (Shell Only)</SelectItem>
+                <SelectItem value="spider" className="text-xs">Spider (3-Spoke)</SelectItem>
+                <SelectItem value="uno" className="text-xs">UNO (4-Spoke)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {params.fitterType !== 'none' && (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-medium text-slate-500">Ring ID (mm)</Label>
+                <Input 
+                  type="number" 
+                  value={params.fitterDiameter} 
+                  onChange={(e) => updateParam('fitterDiameter', parseFloat(e.target.value))} 
+                  className="h-9 text-xs font-mono"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-medium text-slate-500">Drop (cm)</Label>
+                <Input 
+                  type="number" 
+                  step={0.1}
+                  value={params.fitterHeight} 
+                  onChange={(e) => updateParam('fitterHeight', parseFloat(e.target.value))} 
+                  className="h-9 text-xs font-mono"
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

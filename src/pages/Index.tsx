@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import LampshadeViewport from '@/components/LampshadeViewport';
 import ControlPanel from '@/components/ControlPanel';
@@ -8,7 +8,7 @@ import { LampshadeParams, LampshadeType } from '@/utils/geometry-generator';
 import { STLExporter } from 'three/examples/jsm/exporters/STLExporter.js';
 import * as THREE from 'three';
 import { showSuccess, showError } from '@/utils/toast';
-import { Box, Layers, Zap, Ruler, Image as ImageIcon, RotateCcw } from 'lucide-react';
+import { Zap, Ruler, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const DEFAULT_PARAMS: LampshadeParams = {
@@ -34,6 +34,9 @@ const DEFAULT_PARAMS: LampshadeParams = {
   slotWidth: 0.1,
   gapDistance: 0.5,
   seed: 1234,
+  fitterType: 'spider',
+  fitterDiameter: 27,
+  fitterHeight: 3,
 };
 
 const Index = () => {
