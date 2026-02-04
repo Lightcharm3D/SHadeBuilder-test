@@ -11,6 +11,7 @@ import * as THREE from 'three';
 import { showSuccess, showError } from '@/utils/toast';
 import { ArrowLeft, Sparkles, Image as ImageIcon, Cpu, ChevronRight, Share2, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { saveStlFile } from '@/utils/file-saver';
 
 const LithophaneGenerator = () => {
   const [params, setParams] = useState<LithophaneParams>({
@@ -122,7 +123,7 @@ const LithophaneGenerator = () => {
     }
   }, [imageData, params]);
 
-  const handleExport = useCallback(() => {
+  const handleExport = useCallback(async () => {
     if (!geometry) {
       showError("Upload an image first");
       return;
@@ -131,15 +132,9 @@ const LithophaneGenerator = () => {
       const exporter = new STLExporter();
       const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial());
       const result = exporter.parse(mesh);
-      const blob = new Blob([result as any], { type: 'application/octet-stream' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `lithophane-${Date.now()}.stl`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      const fileName = `lithophane-${Date.now()}.stl`;
+      
+      await saveStlFile(result as string, fileName);
       showSuccess("STL exported!");
     } catch (err) {
       showError("Export failed");
@@ -147,7 +142,7 @@ const LithophaneGenerator = () => {
   }, [geometry]);
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col safe-area-pt">
+    <div className="h-full bg-slate-50 flex flex-col pt-safe pb-safe">
       <header className="h-16 lg:h-20 border-b border-slate-200 bg-white/80 backdrop-blur-2xl px-4 lg:px-8 flex items-center justify-between shrink-0 z-30 sticky top-0">
         <div className="flex items-center gap-4 lg:gap-6">
           <Link to="/" className="p-2 hover:bg-slate-100 rounded-xl transition-all group">
@@ -168,9 +163,8 @@ const LithophaneGenerator = () => {
         </div>
       </header>
       
-      <main className="flex-1 flex flex-col lg:flex-row p-4 lg:p-6 gap-6 lg:gap-8 overflow-hidden max-w-[1920px] mx-auto w-full">
-        <div className="flex-1 relative min-h-[300px] bg-slate-950 rounded-[2rem] lg:rounded-[3rem] shadow-2xl border border-slate-800 overflow-hidden studio-shadow group">
-          <div className="absolute inset-0 scanline opacity-20 pointer-events-none z-10"></div>
+      <main className="flex-1 flex flex-col lg:flex-row p-4 lg:p-6 gap-6 lg:gap-8 overflow-hidden w-full">
+        <div className="flex-1 relative min-h-0 bg-slate-950 rounded-[2rem] lg:rounded-[3rem] shadow-2xl border border-slate-800 overflow-hidden studio-shadow">
           <LithophaneViewport geometry={geometry} />
           
           {!imageData && !imagePreview && (
@@ -212,12 +206,6 @@ const LithophaneGenerator = () => {
           onCancel={() => setIsCropping(false)}
         />
       )}
-      
-      <footer className="hidden lg:block py-6 px-12 border-t border-slate-200 bg-white text-center safe-area-pb">
-        <p className="text-[9px] text-slate-400 font-black uppercase tracking-[0.3em]">
-          © {new Date().getFullYear()} LightCharm 3D Studio
-        </p>
-      </footer>
     </div>
   );
 };
