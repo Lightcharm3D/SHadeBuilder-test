@@ -2,7 +2,7 @@
 
 import React, { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import LampshadeViewport, { MaterialParams } from '@/components/LampshadeViewport';
 import ControlPanel from '@/components/ControlPanel';
 import { LampshadeParams, LampshadeType, SilhouetteType } from '@/utils/geometry-generator';
@@ -63,6 +63,7 @@ const Index = () => {
   const [material, setMaterial] = useState<MaterialParams>(DEFAULT_MATERIAL);
   const [showWireframe, setShowWireframe] = useState(false);
   const [showPrintability, setShowPrintability] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(true);
   const meshRef = useRef<THREE.Mesh | null>(null);
   const isMobile = useIsMobile();
 
@@ -169,6 +170,38 @@ const Index = () => {
               <span className="text-[8px] font-black uppercase tracking-[0.2em] text-white/80">Live Preview</span>
             </div>
           </div>
+
+          <AnimatePresence>
+            {showWelcome && (
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 flex items-center justify-center z-30 bg-slate-950/40 backdrop-blur-sm"
+              >
+                <motion.div 
+                  initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                  animate={{ scale: 1, opacity: 1, y: 0 }}
+                  exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                  className="bg-slate-900/80 backdrop-blur-3xl p-8 lg:p-12 rounded-[2.5rem] lg:rounded-[3.5rem] border border-white/10 text-center max-w-xs lg:max-w-sm shadow-[0_0_100px_rgba(99,102,241,0.2)] mx-4"
+                >
+                  <div className="w-16 h-16 bg-indigo-500/20 rounded-[1.5rem] flex items-center justify-center mx-auto mb-6 shadow-inner">
+                    <Sparkles className="w-8 h-8 text-indigo-400" />
+                  </div>
+                  <h3 className="text-white font-black text-xl lg:text-2xl mb-3 tracking-tight">Ready to Design</h3>
+                  <p className="text-slate-400 text-xs lg:text-sm leading-relaxed mb-8">
+                    Welcome to the professional lampshade studio. Start adjusting parameters to create your masterpiece.
+                  </p>
+                  <Button 
+                    onClick={() => setShowWelcome(false)}
+                    className="w-full brand-gradient text-white h-12 lg:h-14 rounded-2xl font-black uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all"
+                  >
+                    Enter Studio
+                  </Button>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {isMobile && (
             <div className="absolute bottom-4 right-4 z-30">
