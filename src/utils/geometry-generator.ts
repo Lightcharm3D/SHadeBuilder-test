@@ -431,9 +431,12 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
   const innerRadius = fitterDiameter / 20; 
   const outerRadius = fitterOuterDiameter / 20;
   const ringHeightCm = fitterRingHeight / 10;
+  const spokeThickCm = (params.spokeThickness || 5) / 10;
+  const spokeWidthCm = (params.spokeWidth || 10) / 10;
   
-  // Use the exact fitterHeight offset from the bottom (-height/2)
-  const yPos = -height / 2 + fitterHeight;
+  // Calculate yPos so that fitterHeight measures from the bottom of the shade to the bottom of the fitter
+  const ringYPos = -height / 2 + fitterHeight + ringHeightCm / 2;
+  const spokeYPos = -height / 2 + fitterHeight + spokeThickCm / 2;
   
   const ringProfile = [
     new THREE.Vector2(innerRadius, -ringHeightCm / 2),
@@ -443,25 +446,16 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
     new THREE.Vector2(innerRadius, -ringHeightCm / 2)
   ];
   const ring = new THREE.LatheGeometry(ringProfile, 64);
-  ring.translate(0, yPos, 0);
+  ring.translate(0, ringYPos, 0);
   geoms.push(ring);
   
-  const baseRadiusAtZ = getRadiusAtHeight(yPos, params);
+  const baseRadiusAtZ = getRadiusAtHeight(spokeYPos, params);
   const diameterMm = baseRadiusAtZ * 2 * 10;
   const wallThicknessCm = thickness;
   const safetyMarginCm = 0.1; 
-  const connectionOverlapCm = 0.2; // 2mm overlap into the ring for strength
+  const connectionOverlapCm = 0.2; 
   
-  let spokeThickMm = Math.max(2, Math.min(6, diameterMm * 0.015));
   let spokeCount = Math.max(4, Math.round(diameterMm / 20));
-  
-  if (baseRadiusAtZ < 2) {
-    spokeThickMm *= 1.5;
-    spokeCount = Math.max(spokeCount, 4);
-  }
-
-  const spokeThickCm = spokeThickMm / 10;
-  const spokeWidthCm = (params.spokeWidth || 10) / 10;
   const fuseDepthCm = wallThicknessCm * 0.25;
 
   for (let i = 0; i < spokeCount; i++) {
@@ -474,8 +468,7 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
     const maxPossibleLength = (params.bottomRadius + params.topRadius) * 2;
     const spoke = new THREE.BoxGeometry(maxPossibleLength, spokeThickCm, spokeWidthCm, 40, 1, 1);
     
-    // Translate with overlap to ensure strong connection to the ring
-    spoke.translate(outerRadius + maxPossibleLength / 2 - connectionOverlapCm, yPos, 0);
+    spoke.translate(outerRadius + maxPossibleLength / 2 - connectionOverlapCm, spokeYPos, 0);
     spoke.rotateY(angle);
     
     const pos = spoke.attributes.position;
@@ -496,7 +489,6 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
       
       const safeR = Math.min(targetFusionR, absoluteLimitR);
       
-      // Only pull back vertices that are outside the ring's outer boundary
       if (currentR > outerRadius + 0.01) {
         const factor = safeR / currentR;
         if (factor < 1.0) {
