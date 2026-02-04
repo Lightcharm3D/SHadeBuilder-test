@@ -17,6 +17,9 @@ export interface LithophaneParams {
   smoothing: number;
   hasHole: boolean;
   holeSize: number;
+  hasBorder: boolean;
+  borderThickness: number;
+  borderHeight: number;
 }
 
 export function generateLithophaneGeometry(
@@ -26,7 +29,8 @@ export function generateLithophaneGeometry(
   const { 
     width, height, minThickness, maxThickness, baseThickness, 
     resolution, type, inverted,
-    brightness, contrast, smoothing, hasHole, holeSize
+    brightness, contrast, smoothing, hasHole, holeSize,
+    hasBorder, borderThickness, borderHeight
   } = params;
   
   const aspect = imageData.width / imageData.height;
@@ -65,6 +69,36 @@ export function generateLithophaneGeometry(
     }
   };
 
+  // Border boundary check
+  const isInBorder = (u: number, v: number) => {
+    if (!hasBorder) return false;
+    
+    const x = u - 0.5;
+    const y = v - 0.5;
+    
+    // Check if point is in the border area (outside the main shape but within border thickness)
+    const borderX = (0.5 - borderThickness / width) / 2;
+    const borderY = (0.5 - borderThickness / height) / 2;
+    
+    switch (type) {
+      case 'circle':
+        const outerRadius = 0.5;
+        const innerRadius = 0.5 - borderThickness / Math.min(width, height);
+        const dist = Math.sqrt(x * x + y * y);
+        return dist <= outerRadius && dist >= innerRadius;
+      case 'heart':
+      case 'badge':
+      default:
+        // For other shapes, create a rectangular border
+        const outerX = 0.5;
+        const outerY = 0.5;
+        const innerX = 0.5 - borderThickness / width;
+        const innerY = 0.5 - borderThickness / height;
+        return (Math.abs(x) <= outerX && Math.abs(y) <= outerY) && 
+               (Math.abs(x) >= innerX || Math.abs(y) >= innerY);
+    }
+  };
+
   const getInterpolatedVal = (u: number, v: number) => {
     const x = u * (imageData.width - 1);
     const y = (1 - v) * (imageData.height - 1);
@@ -95,10 +129,16 @@ export function generateLithophaneGeometry(
       const u = i / (gridX - 1);
       const v = j / (gridY - 1);
       const inside = isInside(u, v);
-      validPoints.push(inside);
+      const inBorder = isInBorder(u, v);
+      validPoints.push(inside || inBorder);
 
-      const bVal = inside ? getInterpolatedVal(u, v) : 0;
-      const thickness = baseThickness + minThickness + bVal * (maxThickness - minThickness);
+      let thickness = baseThickness;
+      if (inside) {
+        const bVal = getInterpolatedVal(u, v);
+        thickness += minThickness + bVal * (maxThickness - minThickness);
+      } else if (inBorder) {
+        thickness += borderHeight;
+      }
       
       const xPos = (u - 0.5) * width;
       const yPos = (v - 0.5) * height;

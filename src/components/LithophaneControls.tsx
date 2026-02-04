@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { LithophaneParams, LithophaneType } from '@/utils/lithophane-generator';
-import { Download, Image as ImageIcon, Sun, Contrast, Zap, Sparkles, Circle, Heart, Square } from 'lucide-react';
+import { Download, Image as ImageIcon, Sun, Contrast, Zap, Sparkles, Circle, Heart, Square, Frame } from 'lucide-react';
 
 interface LithophaneControlsProps {
   params: LithophaneParams;
@@ -111,6 +111,48 @@ const LithophaneControls: React.FC<LithophaneControlsProps> = ({
             <span className="text-[10px] text-indigo-600">Adds 3mm attachment point</span>
           </div>
           <Switch checked={params.hasHole} onCheckedChange={(v) => updateParam('hasHole', v)} />
+        </div>
+
+        <div className="space-y-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
+          <div className="flex items-center justify-between">
+            <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
+              <Frame className="w-3 h-3" />
+              Border Frame
+            </Label>
+            <Switch checked={params.hasBorder} onCheckedChange={(v) => updateParam('hasBorder', v)} />
+          </div>
+          
+          {params.hasBorder && (
+            <div className="space-y-4 pt-2">
+              <div className="space-y-2">
+                <div className="flex justify-between text-[10px] font-medium">
+                  <span>Thickness (mm)</span>
+                  <span>{params.borderThickness}</span>
+                </div>
+                <Slider 
+                  value={[params.borderThickness]} 
+                  min={0.5} 
+                  max={5} 
+                  step={0.1} 
+                  onValueChange={([v]) => updateParam('borderThickness', v)} 
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex justify-between text-[10px] font-medium">
+                  <span>Height (mm)</span>
+                  <span>{params.borderHeight}</span>
+                </div>
+                <Slider 
+                  value={[params.borderHeight]} 
+                  min={0.5} 
+                  max={5} 
+                  step={0.1} 
+                  onValueChange={([v]) => updateParam('borderHeight', v)} 
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="space-y-4 p-4 bg-slate-50 rounded-xl border border-slate-100">

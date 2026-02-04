@@ -26,6 +26,9 @@ const LithophaneGenerator = () => {
     smoothing: 1.5,
     hasHole: false,
     holeSize: 3,
+    hasBorder: false,
+    borderThickness: 2,
+    borderHeight: 2,
   });
   
   const [imageData, setImageData] = useState<ImageData | null>(null);
