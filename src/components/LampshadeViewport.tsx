@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { LampshadeParams, generateLampshadeGeometry } from '@/utils/geometry-generator';
 import { Button } from '@/components/ui/button';
-import { Lightbulb, LightbulbOff, ShieldAlert, Scissors } from 'lucide-react';
+import { ShieldAlert, Scissors } from 'lucide-react';
 
 export interface MaterialParams {
   color: string;
@@ -210,7 +210,7 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
           onClick={() => setIsLightOn(!isLightOn)}
           className={`gap-2 h-9 text-[10px] font-black uppercase tracking-widest shadow-xl transition-all ${isLightOn ? 'bg-amber-100 text-amber-700' : 'bg-slate-800 text-slate-300'}`}
         >
-          {isLightOn ? <Lightbulb className="w-4 h-4" /> : <LightbulbOff className="w-4 h-4" />}
+          <img src="/light-icon.png" alt="Light" className={`w-4 h-4 ${!isLightOn ? 'opacity-50 grayscale' : ''}`} />
           {isLightOn ? 'Light On' : 'Light Off'}
         </Button>
         <Button 
