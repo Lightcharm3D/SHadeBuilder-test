@@ -57,17 +57,23 @@
     @apply bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-violet-600;
   }
   .glass-panel {
-    @apply bg-white/80 backdrop-blur-2xl border border-white/20 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)];
+    @apply bg-white/70 backdrop-blur-2xl border border-white/40 shadow-[0_8px_32px_0_rgba(31,38,135,0.05)];
   }
   .studio-shadow {
-    box-shadow: 0 25px 50px -12px rgba(79, 70, 229, 0.12), 0 0 0 1px rgba(79, 70, 229, 0.05);
+    box-shadow: 0 25px 50px -12px rgba(79, 70, 229, 0.08), 0 0 0 1px rgba(79, 70, 229, 0.03);
   }
   .inner-glow {
     box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.5);
   }
   .scanline {
-    background: linear-gradient(to bottom, transparent 50%, rgba(99, 102, 241, 0.05) 50%);
+    background: linear-gradient(to bottom, transparent 50%, rgba(99, 102, 241, 0.03) 50%);
     background-size: 100% 4px;
+  }
+  .premium-border {
+    @apply border border-slate-200/60 hover:border-indigo-300/50 transition-colors duration-300;
+  }
+  .soft-glow {
+    @apply shadow-[0_0_20px_rgba(99,102,241,0.15)];
   }
 }
 
@@ -76,6 +82,6 @@
     @apply border-border;
   }
   body {
-    @apply bg-slate-50 text-foreground antialiased selection:bg-indigo-100 selection:text-indigo-900;
+    @apply bg-[#f8fafc] text-foreground antialiased selection:bg-indigo-100 selection:text-indigo-900;
   }
 }
