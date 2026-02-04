@@ -11,7 +11,7 @@ import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LampshadeParams, FitterType, SilhouetteType } from '@/utils/geometry-generator';
 import { MaterialParams } from './LampshadeViewport';
-import { Download, RefreshCw, Box, Settings2, Hash, RotateCcw, Anchor, Layers, Ruler, Sliders, Star, Save, History, Trash2, Weight, MoveVertical, ShieldAlert, Palette, Zap, Droplets, Share2, ClipboardCheck, Import, Sparkles } from 'lucide-react';
+import { Download, RefreshCw, Box, Settings2, Hash, RotateCcw, Anchor, Layers, Ruler, Sliders, Star, Save, History, Trash2, Weight, MoveVertical, ShieldAlert, Palette, Zap, Droplets, Share2, ClipboardCheck, Import, Sparkles, CircleDot } from 'lucide-react';
 import { showSuccess, showError } from '@/utils/toast';
 
 interface ControlPanelProps {
@@ -119,9 +119,10 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
       </div>
 
       <Tabs defaultValue="shape" className="w-full">
-        <TabsList className="grid grid-cols-5 w-full h-12 bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
+        <TabsList className="grid grid-cols-6 w-full h-12 bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
           <TabsTrigger value="shape" className="text-[9px] font-black uppercase tracking-widest rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-indigo-600">Shape</TabsTrigger>
-          <TabsTrigger value="pattern" className="text-[9px] font-black uppercase tracking-widest rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-indigo-600">Pattern</TabsTrigger>
+          <TabsTrigger value="fitter" className="text-[9px] font-black uppercase tracking-widest rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-indigo-600">Fitter</TabsTrigger>
+          <TabsTrigger value="pattern" className="text-[9px] font-black uppercase tracking-widest rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-indigo-600">Pat</TabsTrigger>
           <TabsTrigger value="material" className="text-[9px] font-black uppercase tracking-widest rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-indigo-600">Mat</TabsTrigger>
           <TabsTrigger value="build" className="text-[9px] font-black uppercase tracking-widest rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-indigo-600">Build</TabsTrigger>
           <TabsTrigger value="history" className="text-[9px] font-black uppercase tracking-widest rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-indigo-600"><History className="w-3.5 h-3.5" /></TabsTrigger>
@@ -192,6 +193,65 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
               <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Top Radius</Label>
               <Input type="number" step={0.1} value={params.topRadius} onChange={(e) => updateParam('topRadius', parseFloat(e.target.value) || 0)} className="h-12 text-xs font-mono font-bold bg-slate-50 rounded-2xl border-slate-200 focus:ring-indigo-500" />
             </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="fitter" className="space-y-8 pt-8">
+          <div className="space-y-6">
+            <div className="space-y-3">
+              <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 flex items-center gap-2">
+                <Anchor className="w-3.5 h-3.5" /> Fitter Type
+              </Label>
+              <Select value={params.fitterType} onValueChange={(v: FitterType) => updateParam('fitterType', v)}>
+                <SelectTrigger className="bg-slate-50 border-slate-200 h-12 text-xs font-bold rounded-2xl focus:ring-indigo-500">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="rounded-2xl">
+                  <SelectItem value="none">None</SelectItem>
+                  <SelectItem value="spider">Spider (Standard)</SelectItem>
+                  <SelectItem value="uno">Uno (Threaded)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {params.fitterType !== 'none' && (
+              <div className="space-y-6">
+                <div className="space-y-3 p-6 bg-slate-50 rounded-[2rem] border border-slate-100 shadow-inner">
+                  <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                    <span className="flex items-center gap-2.5"><MoveVertical className="w-4 h-4" /> Vertical Height (cm)</span>
+                    <span className="text-indigo-600 font-mono font-bold">{params.fitterHeight.toFixed(1)}</span>
+                  </div>
+                  <Slider value={[params.fitterHeight]} min={0} max={params.height} step={0.1} onValueChange={([v]) => updateParam('fitterHeight', v)} className="py-2" />
+                  <p className="text-[8px] text-slate-400 font-bold uppercase tracking-wider">Distance from bottom edge</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-5">
+                  <div className="space-y-3">
+                    <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 flex items-center gap-2">
+                      <CircleDot className="w-3.5 h-3.5" /> Inner ID (mm)
+                    </Label>
+                    <Input type="number" step={0.1} value={params.fitterDiameter} onChange={(e) => updateParam('fitterDiameter', parseFloat(e.target.value))} className="h-12 text-xs font-mono font-bold bg-slate-50 rounded-2xl border-slate-200" />
+                  </div>
+                  <div className="space-y-3">
+                    <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 flex items-center gap-2">
+                      <CircleDot className="w-3.5 h-3.5" /> Outer OD (mm)
+                    </Label>
+                    <Input type="number" step={0.1} value={params.fitterOuterDiameter} onChange={(e) => updateParam('fitterOuterDiameter', parseFloat(e.target.value))} className="h-12 text-xs font-mono font-bold bg-slate-50 rounded-2xl border-slate-200" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-5">
+                  <div className="space-y-3">
+                    <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Spoke Thick (mm)</Label>
+                    <Input type="number" step={0.1} value={params.spokeThickness} onChange={(e) => updateParam('spokeThickness', parseFloat(e.target.value))} className="h-12 text-xs font-mono font-bold bg-slate-50 rounded-2xl border-slate-200" />
+                  </div>
+                  <div className="space-y-3">
+                    <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Spoke Width (mm)</Label>
+                    <Input type="number" step={0.1} value={params.spokeWidth} onChange={(e) => updateParam('spokeWidth', parseFloat(e.target.value))} className="h-12 text-xs font-mono font-bold bg-slate-50 rounded-2xl border-slate-200" />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </TabsContent>
 
