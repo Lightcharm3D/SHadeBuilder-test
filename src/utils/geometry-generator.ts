@@ -81,11 +81,9 @@ function getRadiusAtHeight(y: number, params: LampshadeParams): number {
   return r;
 }
 
-// Helper to get displacement at a specific point for fitter calculations
 function getDisplacementAt(angle: number, y: number, params: LampshadeParams): number {
   const { type, seed, height } = params;
   const normY = (y + height / 2) / height;
-  const rBase = getRadiusAtHeight(y, params);
 
   switch (type) {
     case 'ribbed_drum':
@@ -107,15 +105,13 @@ function getDisplacementAt(angle: number, y: number, params: LampshadeParams): n
       const segmentIndex = Math.round((angle / (Math.PI * 2)) * (folds * 2));
       return segmentIndex % 2 !== 0 ? -depth : 0;
     }
-    case 'spiral_twist':
-      return 0; // Twist doesn't change radius
     default:
       return 0;
   }
 }
 
 export function generateLampshadeGeometry(params: LampshadeParams): THREE.BufferGeometry {
-  const { type, height, topRadius, bottomRadius, segments, seed, thickness } = params;
+  const { type, height, topRadius, bottomRadius, segments, thickness } = params;
   
   const getClosedProfilePoints = (steps = 60, customThickness?: number) => {
     const points = [];
@@ -162,43 +158,73 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       const geoms: THREE.BufferGeometry[] = [];
       const coreOffset = 0.8; 
       
-      const coreProfile = [];
-      for (let i = 0; i <= 40; i++) {
-        const t = i / 40;
-        const y = -height / 2 + height * t;
-        coreProfile.push(new THREE.Vector2(getRadiusAtHeight(y, params) - coreOffset, y));
-      }
-      for (let i = 40; i >= 0; i--) {
-        const t = i / 40;
-        const y = -height / 2 + height * t;
-        coreProfile.push(new THREE.Vector2(getRadiusAtHeight(y, params) - coreOffset - thickness, y));
-      }
-      geoms.push(new THREE.LatheGeometry(coreProfile, segments));
+      const coreProfile = getClosedProfilePoints(40, thickness);
+      const coreGeom = new THREE.LatheGeometry(coreProfile, segments);
+      coreGeom.scale(0.8, 1, 0.8); // Shrink core slightly
+      geoms.push(coreGeom);
 
       for (let i = 0; i < count; i++) {
         const angle = (i / count) * Math.PI * 2;
         const finDepth = coreOffset + 0.5; 
-        // Use high height segments so fins follow silhouette curvature
         const finGeom = new THREE.BoxGeometry(finDepth, height, thickness, 1, 32, 1);
         const pos = finGeom.attributes.position;
         for (let j = 0; j < pos.count; j++) {
           const py = pos.getY(j);
           const r = getRadiusAtHeight(py, params);
           const px = pos.getX(j);
-          // Align fin to core with slight overlap for manifold geometry
           if (px > 0) pos.setX(j, r);
           else pos.setX(j, r - finDepth + 0.01); 
         }
         finGeom.rotateY(angle);
         geoms.push(finGeom);
       }
+      geometry = BufferGeometryUtils.mergeGeometries(geoms);
+      break;
+    }
 
-      const ringTop = new THREE.TorusGeometry(topRadius - thickness/2, thickness, 8, segments);
+    case 'lattice': {
+      const density = params.gridDensity || 12;
+      const geoms: THREE.BufferGeometry[] = [];
+      const strutRadius = thickness / 2;
+      
+      // Diamond Lattice (Criss-cross)
+      for (let i = 0; i < density; i++) {
+        const angle = (i / density) * Math.PI * 2;
+        
+        // Forward twist strut
+        const strut1 = new THREE.CylinderGeometry(strutRadius, strutRadius, height * 1.1, 6, 32);
+        const pos1 = strut1.attributes.position;
+        for (let j = 0; j < pos1.count; j++) {
+          const py = pos1.getY(j);
+          const t = (py + height / 2) / height;
+          const r = getRadiusAtHeight(py, params);
+          const twist = t * (Math.PI * 2 / density) * 2;
+          const curAngle = angle + twist;
+          pos1.setXYZ(j, Math.cos(curAngle) * r, py, Math.sin(curAngle) * r);
+        }
+        geoms.push(strut1);
+
+        // Backward twist strut
+        const strut2 = new THREE.CylinderGeometry(strutRadius, strutRadius, height * 1.1, 6, 32);
+        const pos2 = strut2.attributes.position;
+        for (let j = 0; j < pos2.count; j++) {
+          const py = pos2.getY(j);
+          const t = (py + height / 2) / height;
+          const r = getRadiusAtHeight(py, params);
+          const twist = -t * (Math.PI * 2 / density) * 2;
+          const curAngle = angle + twist;
+          pos2.setXYZ(j, Math.cos(curAngle) * r, py, Math.sin(curAngle) * r);
+        }
+        geoms.push(strut2);
+      }
+      
+      // Top and Bottom reinforcement rings
+      const ringTop = new THREE.TorusGeometry(topRadius, strutRadius, 8, segments);
       ringTop.rotateX(Math.PI / 2);
       ringTop.translate(0, height / 2, 0);
       geoms.push(ringTop);
-
-      const ringBottom = new THREE.TorusGeometry(bottomRadius - thickness/2, thickness, 8, segments);
+      
+      const ringBottom = new THREE.TorusGeometry(bottomRadius, strutRadius, 8, segments);
       ringBottom.rotateX(Math.PI / 2);
       ringBottom.translate(0, -height / 2, 0);
       geoms.push(ringBottom);
@@ -206,25 +232,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       geometry = BufferGeometryUtils.mergeGeometries(geoms);
       break;
     }
-
-    case 'origami': {
-      const folds = params.foldCount || 12;
-      geometry = new THREE.LatheGeometry(closedProfile, folds * 2);
-      const pos = geometry.attributes.position;
-      for (let i = 0; i < pos.count; i++) {
-        const px = pos.getX(i);
-        const py = pos.getY(i);
-        const pz = pos.getZ(i);
-        const angle = Math.atan2(pz, px);
-        const r = Math.sqrt(px * px + pz * pz);
-        const disp = getDisplacementAt(angle, py, params);
-        const factor = (r + disp) / r;
-        pos.setX(i, px * factor);
-        pos.setZ(i, pz * factor);
-      }
-      break;
-    }
-
+    
     case 'spiral_twist': {
       const twist = (params.twistAngle || 360) * (Math.PI / 180);
       geometry = new THREE.LatheGeometry(closedProfile, segments);
@@ -258,7 +266,8 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
         const py = pos.getY(j);
         const r = getRadiusAtHeight(py, params) - thickness;
         const pz = pos.getZ(j);
-        if (pz > 0) pos.setZ(j, r);
+        // Ensure rib follows silhouette and stays inside
+        if (pz > 0) pos.setZ(j, r + 0.01); // Slight overlap for manifold
         else pos.setZ(j, r - ribDepth);
       }
       rib.rotateY(angle);

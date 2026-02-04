@@ -44,7 +44,6 @@ export function generateLithophaneGeometry(
   const gridX = Math.floor(resolution * aspect);
   const gridY = resolution;
   
-  // Apply Text Overlay to Image Data if present
   let finalImageData = imageData;
   if (text && text.trim().length > 0) {
     finalImageData = applyTextOverlay(imageData, text, textSize, textY);
@@ -163,11 +162,16 @@ export function generateLithophaneGeometry(
   }
 
   for (let j = 0; j < gridY - 1; j++) {
-    for (let i = 0; i < gridX - 1; i++) {
+    for (let i = 0; i < gridX; i++) {
+      const nextI = (i + 1) % gridX;
+      // If not a cylinder, don't wrap the last column
+      if (type !== 'cylinder' && i === gridX - 1) continue;
+
       const a = j * gridX + i;
-      const b = j * gridX + (i + 1);
+      const b = j * gridX + nextI;
       const c = (j + 1) * gridX + i;
-      const d = (j + 1) * gridX + (i + 1);
+      const d = (j + 1) * gridX + nextI;
+      
       if (validPoints[a] && validPoints[b] && validPoints[c] && validPoints[d]) {
         indices.push(a, c, b); indices.push(b, c, d);
         indices.push(a + backOffset, b + backOffset, c + backOffset);
@@ -176,35 +180,41 @@ export function generateLithophaneGeometry(
     }
   }
 
+  // Side walls
   for (let j = 0; j < gridY; j++) {
     for (let i = 0; i < gridX; i++) {
       const idx = j * gridX + i;
       if (!validPoints[idx]) continue;
-      if (i === 0 || !validPoints[idx - 1]) {
-        const nextJ = (j === gridY - 1) ? j : j + 1;
-        if (validPoints[nextJ * gridX + i]) {
-          const a = idx, b = idx + backOffset, c = nextJ * gridX + i, d = nextJ * gridX + i + backOffset;
-          indices.push(a, b, c); indices.push(b, d, c);
+      
+      const nextI = (i + 1) % gridX;
+      const nextJ = (j + 1) % gridY;
+
+      // Left/Right edges (only if not cylinder)
+      if (type !== 'cylinder') {
+        if (i === 0 || !validPoints[idx - 1]) {
+          if (j < gridY - 1 && validPoints[(j + 1) * gridX + i]) {
+            const a = idx, b = idx + backOffset, c = (j + 1) * gridX + i, d = (j + 1) * gridX + i + backOffset;
+            indices.push(a, b, c); indices.push(b, d, c);
+          }
+        }
+        if (i === gridX - 1 || !validPoints[idx + 1]) {
+          if (j < gridY - 1 && validPoints[(j + 1) * gridX + i]) {
+            const a = idx, b = idx + backOffset, c = (j + 1) * gridX + i, d = (j + 1) * gridX + i + backOffset;
+            indices.push(a, c, b); indices.push(b, c, d);
+          }
         }
       }
-      if (i === gridX - 1 || !validPoints[idx + 1]) {
-        const nextJ = (j === gridY - 1) ? j : j + 1;
-        if (validPoints[nextJ * gridX + i]) {
-          const a = idx, b = idx + backOffset, c = nextJ * gridX + i, d = nextJ * gridX + i + backOffset;
-          indices.push(a, c, b); indices.push(b, c, d);
-        }
-      }
+
+      // Top/Bottom edges
       if (j === 0 || !validPoints[idx - gridX]) {
-        const nextI = (i === gridX - 1) ? i : i + 1;
-        if (validPoints[j * gridX + nextI]) {
-          const a = idx, b = idx + backOffset, c = j * gridX + nextI, d = j * gridX + nextI + backOffset;
+        if (i < gridX - 1 && validPoints[j * gridX + i + 1]) {
+          const a = idx, b = idx + backOffset, c = j * gridX + i + 1, d = j * gridX + i + 1 + backOffset;
           indices.push(a, c, b); indices.push(b, c, d);
         }
       }
       if (j === gridY - 1 || !validPoints[idx + gridX]) {
-        const nextI = (i === gridX - 1) ? i : i + 1;
-        if (validPoints[j * gridX + nextI]) {
-          const a = idx, b = idx + backOffset, c = j * gridX + nextI, d = j * gridX + nextI + backOffset;
+        if (i < gridX - 1 && validPoints[j * gridX + i + 1]) {
+          const a = idx, b = idx + backOffset, c = j * gridX + i + 1, d = j * gridX + i + 1 + backOffset;
           indices.push(a, b, c); indices.push(b, d, c);
         }
       }
@@ -225,16 +235,14 @@ function applyTextOverlay(imageData: ImageData, text: string, size: number, yPos
   const ctx = canvas.getContext('2d');
   if (!ctx) return imageData;
 
-  // Draw original image
   const tempCanvas = document.createElement('canvas');
   tempCanvas.width = imageData.width;
   tempCanvas.height = imageData.height;
   tempCanvas.getContext('2d')?.putImageData(imageData, 0, 0);
   ctx.drawImage(tempCanvas, 0, 0);
 
-  // Draw Text
   ctx.font = `bold ${size}px sans-serif`;
-  ctx.fillStyle = 'black'; // Black text = thickest part of lithophane
+  ctx.fillStyle = 'black'; 
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText(text, canvas.width / 2, canvas.height * yPos);
