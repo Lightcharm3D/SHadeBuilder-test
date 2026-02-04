@@ -7,14 +7,24 @@ import { LampshadeParams, generateLampshadeGeometry } from '@/utils/geometry-gen
 import { Button } from '@/components/ui/button';
 import { Lightbulb, LightbulbOff } from 'lucide-react';
 
+export interface MaterialParams {
+  color: string;
+  roughness: number;
+  metalness: number;
+  transmission: number;
+  opacity: number;
+}
+
 interface ViewportProps {
   params: LampshadeParams;
+  material: MaterialParams;
   showWireframe?: boolean;
   onSceneReady?: (scene: THREE.Scene, mesh: THREE.Mesh) => void;
 }
 
 const LampshadeViewport: React.FC<ViewportProps> = ({ 
   params, 
+  material,
   showWireframe = false, 
   onSceneReady 
 }) => {
@@ -65,7 +75,7 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     fillLight.position.set(-20, 10, -20);
     scene.add(fillLight);
 
-    // Internal Light Bulb (Hidden by default)
+    // Internal Light Bulb
     const bulbLight = new THREE.PointLight(0xffaa44, 0, 100);
     bulbLight.position.set(0, 0, 0);
     bulbLight.castShadow = true;
@@ -92,28 +102,6 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     grid.position.y = 0.01;
     bedGroup.add(grid);
 
-    // Brand Label
-    const canvas = document.createElement('canvas');
-    canvas.width = 1024;
-    canvas.height = 256;
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      ctx.fillStyle = 'rgba(0,0,0,0)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.font = 'bold 96px sans-serif';
-      ctx.fillStyle = '#6366f1';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('LightCharm 3D', 512, 128);
-    }
-    const brandTexture = new THREE.CanvasTexture(canvas);
-    const brandGeom = new THREE.PlaneGeometry(20, 5);
-    const brandMat = new THREE.MeshBasicMaterial({ map: brandTexture, transparent: true, opacity: 0.5 });
-    const brandMesh = new THREE.Mesh(brandGeom, brandMat);
-    brandMesh.rotation.x = -Math.PI / 2;
-    brandMesh.position.set(0, 0.05, bedSize / 2 - 3); 
-    bedGroup.add(brandMesh);
-
     scene.add(bedGroup);
 
     const controls = new OrbitControls(camera, renderer.domElement);
@@ -123,15 +111,18 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     controlsRef.current = controls;
 
     const geometry = generateLampshadeGeometry(params);
-    const material = new THREE.MeshStandardMaterial({ 
-      color: 0xe2e8f0, 
+    const meshMaterial = new THREE.MeshPhysicalMaterial({ 
+      color: material.color, 
+      roughness: material.roughness, 
+      metalness: material.metalness,
+      transmission: material.transmission,
+      transparent: material.opacity < 1,
+      opacity: material.opacity,
       side: THREE.DoubleSide, 
-      roughness: 0.4, 
-      metalness: 0.1, 
       wireframe: showWireframe 
     });
     
-    const mesh = new THREE.Mesh(geometry, material);
+    const mesh = new THREE.Mesh(geometry, meshMaterial);
     mesh.castShadow = true;
     mesh.receiveShadow = true;
     mesh.position.y = params.height / 2;
@@ -173,11 +164,17 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
       meshRef.current.geometry.dispose();
       meshRef.current.geometry = newGeom;
       meshRef.current.position.y = params.height / 2;
-      if (meshRef.current.material instanceof THREE.MeshStandardMaterial) {
-        meshRef.current.material.wireframe = showWireframe;
-      }
+      
+      const mat = meshRef.current.material as THREE.MeshPhysicalMaterial;
+      mat.color.set(material.color);
+      mat.roughness = material.roughness;
+      mat.metalness = material.metalness;
+      mat.transmission = material.transmission;
+      mat.opacity = material.opacity;
+      mat.transparent = material.opacity < 1;
+      mat.wireframe = showWireframe;
     }
-  }, [params, showWireframe]);
+  }, [params, material, showWireframe]);
 
   useEffect(() => {
     if (bulbLightRef.current && bulbMeshRef.current) {

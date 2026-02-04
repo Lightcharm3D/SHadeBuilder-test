@@ -11,8 +11,7 @@ export type LampshadeType =
   | 'origami' 
   | 'perlin_noise' 
   | 'slotted' 
-  | 'double_wall'
-  | 'lithophane';
+  | 'double_wall';
 
 export type FitterType = 'none' | 'spider' | 'uno';
 
@@ -46,12 +45,6 @@ export interface LampshadeParams {
   slotCount?: number;
   slotWidth?: number;
   gapDistance?: number;
-  
-  // Lithophane specific params
-  imageData?: ImageData | null;
-  lithoResolution?: number;
-  maxThickness?: number;
-  minThickness?: number;
 }
 
 export function generateLampshadeGeometry(params: LampshadeParams): THREE.BufferGeometry {
@@ -99,6 +92,80 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
         const newX = posX * Math.cos(angle) - posZ * Math.sin(angle);
         const newZ = posX * Math.sin(angle) + posZ * Math.cos(angle);
         pos.setXYZ(i, newX, posY, newZ);
+      }
+      break;
+    }
+
+    case 'voronoi': {
+      const cells = params.cellCount || 12;
+      geometry = new THREE.LatheGeometry(getProfile(), segments);
+      const pos = geometry.attributes.position;
+      for (let i = 0; i < pos.count; i++) {
+        const px = pos.getX(i);
+        const py = pos.getY(i);
+        const pz = pos.getZ(i);
+        const angle = Math.atan2(pz, px);
+        const normY = (py + height / 2) / height;
+        
+        // Pseudo-voronoi using multiple sine waves
+        const noise = Math.sin(angle * cells) * Math.cos(normY * cells * 0.5) + 
+                      Math.sin(angle * cells * 0.5 + seed) * Math.cos(normY * cells);
+        const offset = 1 + (noise * 0.1);
+        pos.setX(i, px * offset);
+        pos.setZ(i, pz * offset);
+      }
+      break;
+    }
+
+    case 'lattice': {
+      const density = params.gridDensity || 12;
+      const geoms: THREE.BufferGeometry[] = [];
+      
+      // Vertical struts
+      for (let i = 0; i < density; i++) {
+        const angle = (i / density) * Math.PI * 2;
+        const strut = new THREE.CylinderGeometry(thickness, thickness, height, 6);
+        const midR = (topRadius + bottomRadius) / 2;
+        strut.rotateX(Math.atan2(bottomRadius - topRadius, height));
+        strut.translate(midR * Math.cos(angle), 0, midR * Math.sin(angle));
+        strut.rotateY(angle);
+        geoms.push(strut);
+      }
+      
+      // Horizontal rings
+      const ringCount = Math.floor(height / 2);
+      for (let i = 0; i <= ringCount; i++) {
+        const t = i / ringCount;
+        const r = topRadius + (bottomRadius - topRadius) * t;
+        const y = -height / 2 + height * t;
+        const ring = new THREE.TorusGeometry(r, thickness, 6, segments);
+        ring.rotateX(Math.PI / 2);
+        ring.translate(0, y, 0);
+        geoms.push(ring);
+      }
+      
+      geometry = BufferGeometryUtils.mergeGeometries(geoms);
+      break;
+    }
+
+    case 'perlin_noise': {
+      const scale = params.noiseScale || 0.5;
+      const strength = params.noiseStrength || 0.5;
+      geometry = new THREE.LatheGeometry(getProfile(60), segments);
+      const pos = geometry.attributes.position;
+      for (let i = 0; i < pos.count; i++) {
+        const px = pos.getX(i);
+        const py = pos.getY(i);
+        const pz = pos.getZ(i);
+        const angle = Math.atan2(pz, px);
+        const normY = (py + height / 2) / height;
+        
+        // Procedural noise displacement
+        const noise = Math.sin(angle * 10 * scale + seed) * Math.cos(normY * 8 * scale) + 
+                      Math.sin(normY * 15 * scale + seed * 0.5) * 0.5;
+        const offset = 1 + (noise * strength * 0.2);
+        pos.setX(i, px * offset);
+        pos.setZ(i, pz * offset);
       }
       break;
     }
@@ -151,19 +218,12 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       for (let i = 0; i < slots; i++) {
         const angle = (i / slots) * Math.PI * 2;
         const slat = new THREE.BoxGeometry(sWidth, height, thickness * 5);
-        
-        // Position and rotate to follow the taper
         const midRadius = (topRadius + bottomRadius) / 2;
         slat.rotateY(angle);
         slat.translate(midRadius * Math.cos(angle), 0, midRadius * Math.sin(angle));
-        
-        // Tilt to match taper angle
-        const taperAngle = Math.atan2(bottomRadius - topRadius, height);
-        // This is a simplification, but looks good
         geoms.push(slat);
       }
       
-      // Add top and bottom rings to hold slots
       const topRing = new THREE.TorusGeometry(topRadius, thickness, 8, segments);
       topRing.rotateX(Math.PI / 2);
       topRing.translate(0, height / 2, 0);
@@ -202,7 +262,6 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       geometry = new THREE.CylinderGeometry(topRadius, bottomRadius, height, segments, 1, true);
   }
 
-  // Add Fitter
   if (params.fitterType !== 'none') {
     const fitterGeom = generateFitterGeometry(params);
     geometry = BufferGeometryUtils.mergeGeometries([geometry, fitterGeom]);
@@ -215,17 +274,14 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
 function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
   const { fitterType, fitterDiameter, fitterHeight, topRadius, height } = params;
   const geoms: THREE.BufferGeometry[] = [];
-  
-  const fitterRadius = fitterDiameter / 20; // Convert mm to cm approx
+  const fitterRadius = fitterDiameter / 20; 
   const yPos = height / 2 - fitterHeight;
   
-  // Central Ring
   const ring = new THREE.TorusGeometry(fitterRadius, 0.15, 8, 32);
   ring.rotateX(Math.PI / 2);
   ring.translate(0, yPos, 0);
   geoms.push(ring);
   
-  // Spokes
   const spokeCount = fitterType === 'spider' ? 3 : 4;
   for (let i = 0; i < spokeCount; i++) {
     const angle = (i / spokeCount) * Math.PI * 2;

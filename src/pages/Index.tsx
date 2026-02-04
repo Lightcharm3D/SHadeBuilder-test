@@ -2,7 +2,7 @@
 
 import React, { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import LampshadeViewport from '@/components/LampshadeViewport';
+import LampshadeViewport, { MaterialParams } from '@/components/LampshadeViewport';
 import ControlPanel from '@/components/ControlPanel';
 import { LampshadeParams, LampshadeType } from '@/utils/geometry-generator';
 import { STLExporter } from 'three/examples/jsm/exporters/STLExporter.js';
@@ -39,8 +39,17 @@ const DEFAULT_PARAMS: LampshadeParams = {
   fitterHeight: 3,
 };
 
+const DEFAULT_MATERIAL: MaterialParams = {
+  color: '#ffffff',
+  roughness: 0.8,
+  metalness: 0,
+  transmission: 0,
+  opacity: 1,
+};
+
 const Index = () => {
   const [params, setParams] = useState<LampshadeParams>(DEFAULT_PARAMS);
+  const [material, setMaterial] = useState<MaterialParams>(DEFAULT_MATERIAL);
   const [showWireframe, setShowWireframe] = useState(false);
   const meshRef = useRef<THREE.Mesh | null>(null);
 
@@ -74,6 +83,7 @@ const Index = () => {
 
   const handleReset = () => {
     setParams(DEFAULT_PARAMS);
+    setMaterial(DEFAULT_MATERIAL);
     showSuccess("Parameters reset to default");
   };
 
@@ -160,6 +170,7 @@ const Index = () => {
         <div className="flex-1 relative min-h-[300px] bg-slate-950 rounded-xl shadow-lg border border-slate-800">
           <LampshadeViewport 
             params={params} 
+            material={material}
             showWireframe={showWireframe} 
             onSceneReady={handleSceneReady} 
           />
@@ -181,6 +192,8 @@ const Index = () => {
           <ControlPanel 
             params={params} 
             setParams={setParams} 
+            material={material}
+            setMaterial={setMaterial}
             showWireframe={showWireframe} 
             setShowWireframe={setShowWireframe} 
             onExport={handleExport} 
