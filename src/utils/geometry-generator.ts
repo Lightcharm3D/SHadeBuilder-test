@@ -432,7 +432,8 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
   const outerRadius = fitterOuterDiameter / 20;
   const ringHeightCm = fitterRingHeight / 10;
   
-  const yPos = -height / 2 + (fitterHeight || height * 0.05);
+  // Use the exact fitterHeight offset from the bottom (-height/2)
+  const yPos = -height / 2 + fitterHeight;
   
   const ringProfile = [
     new THREE.Vector2(innerRadius, -ringHeightCm / 2),
