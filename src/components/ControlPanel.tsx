@@ -10,7 +10,7 @@ import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LampshadeParams, FitterType, SilhouetteType } from '@/utils/geometry-generator';
 import { MaterialParams } from './LampshadeViewport';
-import { Download, RefreshCw, Box, Settings2, Hash, RotateCcw, Anchor, Layers, Ruler, Sliders, Star, Save, History, Trash2, Weight, MoveVertical, ShieldAlert, Palette, Zap } from 'lucide-react';
+import { Download, RefreshCw, Box, Settings2, Hash, RotateCcw, Anchor, Layers, Ruler, Sliders, Star, Save, History, Trash2, Weight, MoveVertical, ShieldAlert, Palette, Zap, Droplets } from 'lucide-react';
 import { showSuccess } from '@/utils/toast';
 
 interface ControlPanelProps {
@@ -77,6 +77,10 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
     setParams({ ...params, [key]: value });
   };
 
+  const updateMaterial = (key: keyof MaterialParams, value: any) => {
+    setMaterial({ ...material, [key]: value });
+  };
+
   return (
     <div className="flex flex-col gap-8 p-8 bg-white rounded-[2.5rem] border border-slate-200 shadow-2xl h-full overflow-y-auto studio-shadow">
       <div className="flex items-center justify-between">
@@ -98,11 +102,12 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
       </div>
 
       <Tabs defaultValue="shape" className="w-full">
-        <TabsList className="grid grid-cols-4 w-full h-12 bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
-          <TabsTrigger value="shape" className="text-[10px] font-black uppercase tracking-widest rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-indigo-600">Shape</TabsTrigger>
-          <TabsTrigger value="pattern" className="text-[10px] font-black uppercase tracking-widest rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-indigo-600">Pattern</TabsTrigger>
-          <TabsTrigger value="build" className="text-[10px] font-black uppercase tracking-widest rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-indigo-600">Build</TabsTrigger>
-          <TabsTrigger value="history" className="text-[10px] font-black uppercase tracking-widest rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-indigo-600"><History className="w-4 h-4" /></TabsTrigger>
+        <TabsList className="grid grid-cols-5 w-full h-12 bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
+          <TabsTrigger value="shape" className="text-[9px] font-black uppercase tracking-widest rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-indigo-600">Shape</TabsTrigger>
+          <TabsTrigger value="pattern" className="text-[9px] font-black uppercase tracking-widest rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-indigo-600">Pattern</TabsTrigger>
+          <TabsTrigger value="material" className="text-[9px] font-black uppercase tracking-widest rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-indigo-600">Mat</TabsTrigger>
+          <TabsTrigger value="build" className="text-[9px] font-black uppercase tracking-widest rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-indigo-600">Build</TabsTrigger>
+          <TabsTrigger value="history" className="text-[9px] font-black uppercase tracking-widest rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-indigo-600"><History className="w-3.5 h-3.5" /></TabsTrigger>
         </TabsList>
 
         <TabsContent value="shape" className="space-y-8 pt-8">
@@ -211,6 +216,56 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 <span className="text-indigo-600 font-mono font-bold">{params.seed.toFixed(0)}</span>
               </div>
               <Slider value={[params.seed]} min={0} max={9999} step={1} onValueChange={([v]) => updateParam('seed', v)} className="py-2" />
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="material" className="space-y-8 pt-8">
+          <div className="space-y-6">
+            <div className="space-y-3">
+              <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 flex items-center gap-2">
+                <Palette className="w-3.5 h-3.5" /> Filament Color
+              </Label>
+              <div className="flex gap-3 items-center">
+                <div 
+                  className="w-12 h-12 rounded-2xl border-2 border-slate-200 shadow-inner shrink-0" 
+                  style={{ backgroundColor: material.color }}
+                />
+                <Input 
+                  type="color" 
+                  value={material.color} 
+                  onChange={(e) => updateMaterial('color', e.target.value)} 
+                  className="h-12 w-full bg-slate-50 border-slate-200 rounded-2xl cursor-pointer p-1"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-5 p-6 bg-slate-50 rounded-[2rem] border border-slate-100 shadow-inner">
+              <div className="space-y-6">
+                <div className="space-y-3">
+                  <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                    <span className="flex items-center gap-2.5"><Zap className="w-4 h-4" /> Roughness</span>
+                    <span className="text-indigo-600 font-mono font-bold">{material.roughness.toFixed(2)}</span>
+                  </div>
+                  <Slider value={[material.roughness]} min={0} max={1} step={0.01} onValueChange={([v]) => updateMaterial('roughness', v)} className="py-2" />
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                    <span className="flex items-center gap-2.5"><Box className="w-4 h-4" /> Metalness</span>
+                    <span className="text-indigo-600 font-mono font-bold">{material.metalness.toFixed(2)}</span>
+                  </div>
+                  <Slider value={[material.metalness]} min={0} max={1} step={0.01} onValueChange={([v]) => updateMaterial('metalness', v)} className="py-2" />
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                    <span className="flex items-center gap-2.5"><Droplets className="w-4 h-4" /> Transmission</span>
+                    <span className="text-indigo-600 font-mono font-bold">{material.transmission.toFixed(2)}</span>
+                  </div>
+                  <Slider value={[material.transmission]} min={0} max={1} step={0.01} onValueChange={([v]) => updateMaterial('transmission', v)} className="py-2" />
+                </div>
+              </div>
             </div>
           </div>
         </TabsContent>
