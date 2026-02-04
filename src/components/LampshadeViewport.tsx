@@ -81,8 +81,9 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     scene.background = new THREE.Color(0x020617);
     sceneRef.current = scene;
 
-    const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 1000);
-    camera.position.set(25, 25, 25);
+    // Camera adjusted for mm scale (200mm plate)
+    const camera = new THREE.PerspectiveCamera(50, 1, 1, 5000);
+    camera.position.set(250, 250, 250);
     cameraRef.current = camera;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -97,27 +98,27 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     scene.add(ambientLight);
     
     const mainLight = new THREE.DirectionalLight(0xffffff, 1.0);
-    mainLight.position.set(30, 50, 30);
+    mainLight.position.set(300, 500, 300);
     mainLight.castShadow = true;
     
-    mainLight.shadow.camera.left = -20;
-    mainLight.shadow.camera.right = 20;
-    mainLight.shadow.camera.top = 20;
-    mainLight.shadow.camera.bottom = -20;
-    mainLight.shadow.camera.far = 200;
+    mainLight.shadow.camera.left = -200;
+    mainLight.shadow.camera.right = 200;
+    mainLight.shadow.camera.top = 200;
+    mainLight.shadow.camera.bottom = -200;
+    mainLight.shadow.camera.far = 2000;
     mainLight.shadow.mapSize.width = 1024;
     mainLight.shadow.mapSize.height = 1024;
     mainLight.shadow.bias = -0.001;
     
     scene.add(mainLight);
 
-    const bulbLight = new THREE.PointLight(0xffaa44, 0, 100);
+    const bulbLight = new THREE.PointLight(0xffaa44, 0, 1000);
     scene.add(bulbLight);
     bulbLightRef.current = bulbLight;
 
-    // Build Plate 200x200mm (20x20cm)
+    // Build Plate 200x200mm
     const bedGroup = new THREE.Group();
-    const bedSize = 20; 
+    const bedSize = 200; 
     const bedGeom = new THREE.PlaneGeometry(bedSize, bedSize);
     
     // Create Branding Texture
@@ -159,7 +160,7 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     bedGroup.add(bed);
     
     const grid = new THREE.GridHelper(bedSize, 20, 0x334155, 0x1e293b);
-    grid.position.y = 0.01;
+    grid.position.y = 0.1;
     bedGroup.add(grid);
     scene.add(bedGroup);
 
@@ -178,7 +179,9 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     const mesh = new THREE.Mesh(geometry, meshMaterial);
     mesh.castShadow = true;
     mesh.receiveShadow = true;
-    mesh.position.y = params.height / 2;
+    // Scale from cm to mm
+    mesh.scale.set(10, 10, 10);
+    mesh.position.y = (params.height * 10) / 2;
     scene.add(mesh);
     meshRef.current = mesh;
 
@@ -212,7 +215,7 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
       const newGeom = generateLampshadeGeometry(params);
       meshRef.current.geometry.dispose();
       meshRef.current.geometry = newGeom;
-      meshRef.current.position.y = params.height / 2;
+      meshRef.current.position.y = (params.height * 10) / 2;
       
       if (showPrintability) {
         meshRef.current.material = overhangMaterial;
