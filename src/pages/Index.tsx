@@ -9,10 +9,10 @@ import { LampshadeParams, LampshadeType, SilhouetteType } from '@/utils/geometry
 import { STLExporter } from 'three/examples/jsm/exporters/STLExporter.js';
 import * as THREE from 'three';
 import { showSuccess, showError } from '@/utils/toast';
-import { ImageIcon, Sparkles, Settings2 } from 'lucide-react';
+import { Ruler, Image as ImageIcon, Box, Lightbulb, ChevronRight, Weight, Sparkles, Cpu, Activity, Users, Layers, Zap, Settings2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer';
+import { Drawer, DrawerContent, DrawerTrigger, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { saveStlFile } from '@/utils/file-saver';
 
 const DEFAULT_PARAMS: LampshadeParams = {
@@ -132,8 +132,8 @@ const Index = () => {
         <div className="flex items-center gap-3 lg:gap-6">
           <div className="relative group">
             <div className="absolute -inset-1 lg:-inset-2 brand-gradient rounded-xl lg:rounded-2xl blur-lg opacity-20 group-hover:opacity-40 transition duration-500"></div>
-            <div className="relative w-10 h-10 lg:w-12 lg:h-12 brand-gradient rounded-xl lg:rounded-2xl flex items-center justify-center text-white shadow-xl transform group-hover:scale-105 transition-transform duration-300 overflow-hidden">
-              <img src="/1770199671230.png" className="w-7 h-7 lg:w-8 lg:h-8 object-contain" alt="Logo" />
+            <div className="relative w-10 h-10 lg:w-12 lg:h-12 brand-gradient rounded-xl lg:rounded-2xl flex items-center justify-center text-white shadow-xl transform group-hover:scale-105 transition-transform duration-300">
+              <Cpu className="w-5 h-5 lg:w-6 lg:h-6" />
             </div>
           </div>
           <div>
@@ -185,8 +185,8 @@ const Index = () => {
                   exit={{ scale: 0.9, opacity: 0, y: 20 }}
                   className="bg-slate-900/80 backdrop-blur-3xl p-8 lg:p-12 rounded-[2.5rem] lg:rounded-[3.5rem] border border-white/10 text-center max-w-xs lg:max-w-sm shadow-[0_0_100px_rgba(99,102,241,0.2)] mx-4"
                 >
-                  <div className="w-16 h-16 bg-indigo-500/20 rounded-[1.5rem] flex items-center justify-center mx-auto mb-6 shadow-inner overflow-hidden">
-                    <img src="/1770199671230.png" className="w-10 h-10 object-contain" alt="Welcome Logo" />
+                  <div className="w-16 h-16 bg-indigo-500/20 rounded-[1.5rem] flex items-center justify-center mx-auto mb-6 shadow-inner">
+                    <Sparkles className="w-8 h-8 text-indigo-400" />
                   </div>
                   <h3 className="text-white font-black text-xl lg:text-2xl mb-3 tracking-tight">Ready to Design</h3>
                   <p className="text-slate-400 text-xs lg:text-sm leading-relaxed mb-8">
