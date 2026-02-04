@@ -199,8 +199,17 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
       mat.opacity = material.opacity;
       mat.transparent = material.opacity < 1;
       mat.wireframe = showWireframe;
+      
+      // Update emissive properties based on light state
+      if (isLightOn) {
+        mat.emissive.set(0xffaa44);
+        mat.emissiveIntensity = 0.4;
+      } else {
+        mat.emissive.set(0x000000);
+        mat.emissiveIntensity = 0;
+      }
     }
-  }, [params, material, showWireframe]);
+  }, [params, material, showWireframe, isLightOn]);
 
   useEffect(() => {
     if (bulbLightRef.current && bulbMeshRef.current) {

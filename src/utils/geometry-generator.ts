@@ -91,6 +91,29 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
   const profile = getProfilePoints();
 
   switch (type) {
+    case 'origami': {
+      const folds = params.foldCount || 12;
+      const depth = params.foldDepth || 0.8;
+      // Use a high-segment lathe but modify vertices to create sharp folds
+      geometry = new THREE.LatheGeometry(profile, folds * 2);
+      const pos = geometry.attributes.position;
+      for (let i = 0; i < pos.count; i++) {
+        const px = pos.getX(i);
+        const pz = pos.getZ(i);
+        const r = Math.sqrt(px * px + pz * pz);
+        const angle = Math.atan2(pz, px);
+        
+        // Every second segment is pushed inward
+        const segmentIndex = Math.round((angle / (Math.PI * 2)) * (folds * 2));
+        const isInner = segmentIndex % 2 !== 0;
+        const factor = isInner ? (r - depth) / r : 1;
+        
+        pos.setX(i, px * factor);
+        pos.setZ(i, pz * factor);
+      }
+      break;
+    }
+
     case 'slotted': {
       const count = params.slotCount || 16;
       const width = params.slotWidth || 0.2;
@@ -269,7 +292,6 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       geometry = new THREE.LatheGeometry(profile, segments);
   }
 
-  // Add Internal Ribs
   if (params.internalRibs > 0) {
     const ribGeoms: THREE.BufferGeometry[] = [];
     for (let i = 0; i < params.internalRibs; i++) {
@@ -286,7 +308,6 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     geometry = BufferGeometryUtils.mergeGeometries([geometry, ribsMerged]);
   }
 
-  // Add Lamp Fitter
   if (params.fitterType !== 'none') {
     const fitterGeom = generateFitterGeometry(params);
     geometry = BufferGeometryUtils.mergeGeometries([geometry, fitterGeom]);
@@ -299,16 +320,14 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
 function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
   const { fitterType, fitterDiameter, fitterHeight, topRadius, height } = params;
   const geoms: THREE.BufferGeometry[] = [];
-  const fitterRadius = fitterDiameter / 20; // mm to cm
+  const fitterRadius = fitterDiameter / 20; 
   const yPos = height / 2 - fitterHeight;
   
-  // Central Ring
   const ring = new THREE.TorusGeometry(fitterRadius, 0.15, 8, 32);
   ring.rotateX(Math.PI / 2);
   ring.translate(0, yPos, 0);
   geoms.push(ring);
   
-  // Spokes
   const spokeCount = fitterType === 'spider' ? 3 : 4;
   for (let i = 0; i < spokeCount; i++) {
     const angle = (i / spokeCount) * Math.PI * 2;

@@ -108,6 +108,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                   <SelectItem value="wave_shell" className="text-xs">Wave Shell</SelectItem>
                   <SelectItem value="voronoi" className="text-xs">Voronoi Cells</SelectItem>
                   <SelectItem value="slotted" className="text-xs">Slotted Fins</SelectItem>
+                  <SelectItem value="origami" className="text-xs">Origami Folds</SelectItem>
                   <SelectItem value="geometric_poly" className="text-xs">Geometric Polygon</SelectItem>
                   <SelectItem value="lattice" className="text-xs">Parametric Lattice</SelectItem>
                   <SelectItem value="perlin_noise" className="text-xs">Perlin Noise</SelectItem>
@@ -166,6 +167,19 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
               <Label className="text-[10px] font-bold uppercase tracking-wider">Pattern Controls</Label>
             </div>
             
+            {params.type === 'origami' && (
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-medium text-slate-500">Fold Count</Label>
+                  <Input type="number" value={params.foldCount} onChange={(e) => updateParam('foldCount', parseInt(e.target.value))} className="h-9 text-xs font-mono" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-medium text-slate-500">Fold Depth</Label>
+                  <Input type="number" step={0.1} value={params.foldDepth} onChange={(e) => updateParam('foldDepth', parseFloat(e.target.value))} className="h-9 text-xs font-mono" />
+                </div>
+              </div>
+            )}
+
             {params.type === 'slotted' && (
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
