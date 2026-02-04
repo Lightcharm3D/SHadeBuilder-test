@@ -69,14 +69,18 @@ function pseudoNoise(x: number, y: number, z: number, seed: number) {
 
 function getRadiusAtHeight(y: number, params: LampshadeParams): number {
   const { height, topRadius, bottomRadius, silhouette } = params;
+  // t = 0 at bottom (-height/2), t = 1 at top (height/2)
   const t = (y + height / 2) / height;
-  let r = topRadius + (bottomRadius - topRadius) * t;
+  
+  // Corrected: bottomRadius at t=0, topRadius at t=1
+  let r = bottomRadius + (topRadius - bottomRadius) * t;
   
   switch (silhouette) {
     case 'hourglass':
       r *= 1 + Math.pow(Math.sin(t * Math.PI), 2) * -0.3;
       break;
     case 'bell':
+      // Bell flares at bottom (t=0)
       r *= 1 + Math.pow(1 - t, 2) * 0.4;
       break;
     case 'convex':
@@ -215,12 +219,15 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
         }
       }
       
-      const topRing = new THREE.TorusGeometry(topRadius, strutRadius, 8, segments);
+      // Corrected: Use getRadiusAtHeight to ensure rings match the lattice exactly
+      const topRingRadius = getRadiusAtHeight(height / 2, params);
+      const topRing = new THREE.TorusGeometry(topRingRadius, strutRadius, 8, segments);
       topRing.rotateX(Math.PI / 2);
       topRing.translate(0, height / 2, 0);
       geoms.push(topRing);
 
-      const bottomRing = new THREE.TorusGeometry(bottomRadius, strutRadius, 8, segments);
+      const bottomRingRadius = getRadiusAtHeight(-height / 2, params);
+      const bottomRing = new THREE.TorusGeometry(bottomRingRadius, strutRadius, 8, segments);
       bottomRing.rotateX(Math.PI / 2);
       bottomRing.translate(0, -height / 2, 0);
       geoms.push(bottomRing);
@@ -383,12 +390,14 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
         geoms.push(strut2);
       }
       
-      const ringTop = new THREE.TorusGeometry(topRadius, strutRadius, 8, segments);
+      const ringTopRadius = getRadiusAtHeight(height / 2, params);
+      const ringTop = new THREE.TorusGeometry(ringTopRadius, strutRadius, 8, segments);
       ringTop.rotateX(Math.PI / 2);
       ringTop.translate(0, height / 2, 0);
       geoms.push(ringTop);
       
-      const ringBottom = new THREE.TorusGeometry(bottomRadius, strutRadius, 8, segments);
+      const ringBottomRadius = getRadiusAtHeight(-height / 2, params);
+      const ringBottom = new THREE.TorusGeometry(ringBottomRadius, strutRadius, 8, segments);
       ringBottom.rotateX(Math.PI / 2);
       ringBottom.translate(0, -height / 2, 0);
       geoms.push(ringBottom);
