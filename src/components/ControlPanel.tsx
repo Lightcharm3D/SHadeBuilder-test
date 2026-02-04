@@ -10,8 +10,8 @@ import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LampshadeParams, FitterType, SilhouetteType } from '@/utils/geometry-generator';
 import { MaterialParams } from './LampshadeViewport';
-import { Download, RefreshCw, Box, Settings2, Hash, RotateCcw, Anchor, Layers, Ruler, Sliders, Star, Save, History, Trash2, Weight, MoveVertical, ShieldAlert, Palette, Zap, Droplets } from 'lucide-react';
-import { showSuccess } from '@/utils/toast';
+import { Download, RefreshCw, Box, Settings2, Hash, RotateCcw, Anchor, Layers, Ruler, Sliders, Star, Save, History, Trash2, Weight, MoveVertical, ShieldAlert, Palette, Zap, Droplets, Share2, ClipboardCheck, Import } from 'lucide-react';
+import { showSuccess, showError } from '@/utils/toast';
 
 interface ControlPanelProps {
   params: LampshadeParams;
@@ -49,6 +49,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   onReset
 }) => {
   const [history, setHistory] = useState<{id: string, name: string, params: LampshadeParams}[]>([]);
+  const [importCode, setImportCode] = useState('');
 
   useEffect(() => {
     const saved = localStorage.getItem('shade_history');
@@ -79,6 +80,27 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
   const updateMaterial = (key: keyof MaterialParams, value: any) => {
     setMaterial({ ...material, [key]: value });
+  };
+
+  const generateShareCode = () => {
+    try {
+      const code = btoa(JSON.stringify(params));
+      navigator.clipboard.writeText(code);
+      showSuccess("Design code copied to clipboard!");
+    } catch (e) {
+      showError("Failed to generate share code");
+    }
+  };
+
+  const handleImportCode = () => {
+    try {
+      const decoded = JSON.parse(atob(importCode));
+      setParams(decoded);
+      setImportCode('');
+      showSuccess("Design imported successfully!");
+    } catch (e) {
+      showError("Invalid design code");
+    }
   };
 
   return (
@@ -180,6 +202,31 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
         <TabsContent value="pattern" className="space-y-8 pt-8">
           <div className="space-y-6">
+            <div className="space-y-3">
+              <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 flex items-center gap-2">
+                <Hash className="w-3.5 h-3.5" /> Generation Seed
+              </Label>
+              <div className="flex gap-2">
+                <Input 
+                  type="number" 
+                  value={params.seed} 
+                  onChange={(e) => updateParam('seed', parseInt(e.target.value) || 0)} 
+                  className="h-12 text-xs font-mono font-bold bg-slate-50 rounded-2xl border-slate-200 focus:ring-indigo-500"
+                  placeholder="Enter seed number..."
+                />
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  onClick={() => updateParam('seed', Math.floor(Math.random() * 1000000))}
+                  className="h-12 w-12 shrink-0 rounded-2xl border-slate-200 hover:bg-indigo-50 hover:text-indigo-600"
+                  title="Randomize Seed"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                </Button>
+              </div>
+              <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Like Minecraft, the same seed produces the same pattern.</p>
+            </div>
+
             {(params.type === 'organic_cell' || params.type === 'faceted_gem') && (
               <div className="grid grid-cols-2 gap-5">
                 <div className="space-y-3">
@@ -210,13 +257,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 <Slider value={[params.twistAngle || 360]} min={0} max={1440} step={10} onValueChange={([v]) => updateParam('twistAngle', v)} className="py-2" />
               </div>
             )}
-            <div className="space-y-5 p-6 bg-slate-50 rounded-[2rem] border border-slate-100 shadow-inner">
-              <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">
-                <span className="flex items-center gap-2.5"><Hash className="w-4 h-4" /> Random Seed</span>
-                <span className="text-indigo-600 font-mono font-bold">{params.seed.toFixed(0)}</span>
-              </div>
-              <Slider value={[params.seed]} min={0} max={9999} step={1} onValueChange={([v]) => updateParam('seed', v)} className="py-2" />
-            </div>
           </div>
         </TabsContent>
 
@@ -350,35 +390,67 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           </div>
         </TabsContent>
 
-        <TabsContent value="history" className="space-y-6 pt-8">
-          <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Recent Snapshots</Label>
-          {history.length === 0 ? (
-            <div className="text-center py-16 border-2 border-dashed border-slate-100 rounded-[2rem] bg-slate-50/50">
-              <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">No saved designs</p>
+        <TabsContent value="history" className="space-y-8 pt-8">
+          <div className="space-y-6">
+            <div className="space-y-4 p-6 bg-indigo-50/50 rounded-[2rem] border border-indigo-100 shadow-sm">
+              <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-600 flex items-center gap-2">
+                <Share2 className="w-4 h-4" /> Share Design
+              </Label>
+              <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider leading-relaxed">Copy this code to share your exact design with others.</p>
+              <Button onClick={generateShareCode} className="w-full gap-2 bg-white hover:bg-indigo-50 text-indigo-600 border border-indigo-200 h-12 text-[10px] font-black uppercase tracking-widest rounded-2xl shadow-sm">
+                <ClipboardCheck className="w-4 h-4" />
+                Copy Design Code
+              </Button>
             </div>
-          ) : (
-            <div className="space-y-3">
-              {history.map(item => (
-                <div key={item.id} className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 group hover:border-indigo-200 hover:bg-white transition-all shadow-sm hover:shadow-md">
-                  <Button 
-                    variant="ghost" 
-                    className="flex-1 h-10 justify-start text-[10px] font-black uppercase tracking-widest px-2 hover:bg-transparent hover:text-indigo-600"
-                    onClick={() => setParams(item.params)}
-                  >
-                    {item.name}
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-9 w-9 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all rounded-xl"
-                    onClick={() => deleteHistory(item.id)}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+
+            <div className="space-y-4 p-6 bg-slate-50 rounded-[2rem] border border-slate-100 shadow-sm">
+              <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 flex items-center gap-2">
+                <Import className="w-4 h-4" /> Import Design
+              </Label>
+              <div className="flex gap-2">
+                <Input 
+                  value={importCode} 
+                  onChange={(e) => setImportCode(e.target.value)} 
+                  placeholder="Paste code here..." 
+                  className="h-12 text-[10px] font-mono bg-white rounded-2xl border-slate-200"
+                />
+                <Button onClick={handleImportCode} disabled={!importCode} className="h-12 px-6 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest">
+                  Import
+                </Button>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Recent Snapshots</Label>
+              {history.length === 0 ? (
+                <div className="text-center py-16 border-2 border-dashed border-slate-100 rounded-[2rem] bg-slate-50/50">
+                  <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">No saved designs</p>
                 </div>
-              ))}
+              ) : (
+                <div className="space-y-3">
+                  {history.map(item => (
+                    <div key={item.id} className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 group hover:border-indigo-200 hover:bg-white transition-all shadow-sm hover:shadow-md">
+                      <Button 
+                        variant="ghost" 
+                        className="flex-1 h-10 justify-start text-[10px] font-black uppercase tracking-widest px-2 hover:bg-transparent hover:text-indigo-600"
+                        onClick={() => setParams(item.params)}
+                      >
+                        {item.name}
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-9 w-9 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all rounded-xl"
+                        onClick={() => deleteHistory(item.id)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </TabsContent>
       </Tabs>
 
