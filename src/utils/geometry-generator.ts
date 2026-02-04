@@ -424,7 +424,7 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
   const outerRadius = fitterOuterDiameter / 20;
   const ringHeightCm = fitterRingHeight / 10;
   
-  // 6. Adaptive Z Position
+  // 7. Adaptive Height
   const yPos = -height / 2 + (fitterHeight || height * 0.05);
   
   const ringProfile = [
@@ -438,16 +438,18 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
   ring.translate(0, yPos, 0);
   geoms.push(ring);
   
-  // 1. Inner Wall Calculation & Adaptive Strength Scaling
+  // 1. Compute Inner and Safety Radii
   const baseRadiusAtZ = getRadiusAtHeight(yPos, params);
   const diameterMm = baseRadiusAtZ * 2 * 10;
+  const wallThicknessCm = thickness;
+  const safetyMarginCm = 0.05; // 0.5mm safety margin
   
-  // 4. Spoke Thickness Scaling
+  // 5. Spoke Thickness
   let spokeThickMm = Math.max(2, Math.min(6, diameterMm * 0.015));
-  // 5. Adaptive Spoke Count
+  // 6. Spoke Count
   let spokeCount = Math.max(4, Math.round(diameterMm / 20));
   
-  // 🛡 Small Lamp Safety Mode
+  // 9. Tiny Lamp Reinforcement
   if (baseRadiusAtZ < 2) { // 20mm
     spokeThickMm *= 1.5;
     spokeCount = Math.max(spokeCount, 4);
@@ -455,10 +457,9 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
 
   const spokeThickCm = spokeThickMm / 10;
   const spokeWidthCm = (params.spokeWidth || 10) / 10;
-  const wallThicknessCm = thickness;
   
-  // 3. Structural Fusion Into Lamp Wall
-  const spokeFuseDepth = wallThicknessCm * 0.3;
+  // 4. Controlled Wall Fusion Depth
+  const fuseDepthCm = wallThicknessCm * 0.25;
 
   for (let i = 0; i < spokeCount; i++) {
     let angle = (i / spokeCount) * Math.PI * 2;
@@ -467,19 +468,20 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
       angle = Math.round(angle / step) * step;
     }
 
-    // 2. Surface-Conforming Spoke Length
-    // Sample displacement at the specific angle to find the exact hit point
+    // 2. Surface-Based Spoke Trimming (Angle Adaptive)
+    // 8. Per-Angle Radius Correction
     const disp = getDisplacementAt(angle, yPos, params);
-    const hitPointR = baseRadiusAtZ + disp;
+    const outerHitR = baseRadiusAtZ + disp;
+    const innerHitR = outerHitR - wallThicknessCm;
     
-    // Spoke must stop exactly at the lamp's inner surface + fusion depth
-    const innerSurfaceR = hitPointR - wallThicknessCm;
-    const finalSpokeEndR = innerSurfaceR + spokeFuseDepth;
+    // Zero-Protrusion: Spoke must stop before the outer shell
+    const safeHitPointR = innerHitR + fuseDepthCm;
+    const absoluteMaxR = outerHitR - safetyMarginCm;
+    const finalSpokeEndR = Math.min(safeHitPointR, absoluteMaxR);
     
     const spokeLength = Math.max(0.1, finalSpokeEndR - outerRadius);
     
-    // 7. Spoke End Geometry (Curvature Matching)
-    // We use a box with segments to allow the end to conform to the organic surface
+    // Create segmented box to allow curvature matching
     const spoke = new THREE.BoxGeometry(spokeLength, spokeThickCm, spokeWidthCm, 10, 1, 1);
     const pos = spoke.attributes.position;
     
@@ -493,11 +495,13 @@ function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
         // Calculate local angle for this vertex to match curvature
         const localAngle = angle + Math.atan2(pz, finalSpokeEndR);
         const localDisp = getDisplacementAt(localAngle, yPos + py, params);
-        const localHitR = baseRadiusAtZ + localDisp;
-        const localEndR = (localHitR - wallThicknessCm) + spokeFuseDepth;
+        const localOuterR = baseRadiusAtZ + localDisp;
+        const localInnerR = localOuterR - wallThicknessCm;
+        
+        const localSafeEndR = Math.min(localInnerR + fuseDepthCm, localOuterR - safetyMarginCm);
         
         // Adjust X to match the organic surface hit point
-        pos.setX(j, localEndR - outerRadius - spokeLength / 2);
+        pos.setX(j, localSafeEndR - outerRadius - spokeLength / 2);
       }
     }
     
