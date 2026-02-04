@@ -169,43 +169,66 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     case 'honeycomb_lattice': {
       const density = params.gridDensity || 10;
       const geoms: THREE.BufferGeometry[] = [];
-      const strutRadius = thickness / 2;
+      const strutRadius = thickness / 1.5; // Slightly thicker for honeycomb
       const hStep = height / density;
       const aStep = (Math.PI * 2) / segments;
       
-      for (let j = 0; j < density; j++) {
-        const y = -height / 2 + j * hStep;
-        const nextY = y + hStep;
-        const midY = y + hStep / 2;
+      // Helper to create a strut between two points
+      const createStrut = (start: THREE.Vector3, end: THREE.Vector3) => {
+        const dist = start.distanceTo(end);
+        const strut = new THREE.CylinderGeometry(strutRadius, strutRadius, dist, 6);
+        strut.translate(0, dist / 2, 0);
+        strut.rotateX(Math.PI / 2);
+        strut.lookAt(end.clone().sub(start));
+        strut.translate(start.x, start.y, start.z);
+        return strut;
+      };
+
+      // We use a grid of vertices and connect them in a hexagonal pattern
+      // A hexagonal grid is a subset of a triangular grid
+      for (let j = 0; j <= density * 2; j++) {
+        const y = -height / 2 + (j / (density * 2)) * height;
+        const r = getRadiusAtHeight(y, params);
         
         for (let i = 0; i < segments; i++) {
-          const angle = i * aStep;
-          const nextAngle = (i + 1) * aStep;
-          const r = getRadiusAtHeight(y, params);
-          const nr = getRadiusAtHeight(nextY, params);
-          const mr = getRadiusAtHeight(midY, params);
+          const angle = (i / segments) * Math.PI * 2;
+          const nextAngle = ((i + 1) / segments) * Math.PI * 2;
+          const nextRowY = -height / 2 + ((j + 1) / (density * 2)) * height;
+          const nextRowR = getRadiusAtHeight(nextRowY, params);
 
-          const p1 = new THREE.Vector3(Math.cos(angle) * r, y, Math.sin(angle) * r);
-          const p2 = new THREE.Vector3(Math.cos(nextAngle) * r, y, Math.sin(nextAngle) * r);
-          const p3 = new THREE.Vector3(Math.cos(angle + aStep/2) * mr, midY, Math.sin(angle + aStep/2) * mr);
-          const p4 = new THREE.Vector3(Math.cos(angle + aStep/2) * nr, nextY, Math.sin(angle + aStep/2) * nr);
-
-          // Create Y-shaped struts that form hexagons when tiled
-          const createStrut = (start: THREE.Vector3, end: THREE.Vector3) => {
-            const dist = start.distanceTo(end);
-            const strut = new THREE.CylinderGeometry(strutRadius, strutRadius, dist, 6);
-            strut.translate(0, dist / 2, 0);
-            strut.rotateX(Math.PI / 2);
-            strut.lookAt(end.clone().sub(start));
-            strut.translate(start.x, start.y, start.z);
-            return strut;
-          };
-
-          geoms.push(createStrut(p1, p3));
-          geoms.push(createStrut(p2, p3));
-          geoms.push(createStrut(p3, p4));
+          const pCurrent = new THREE.Vector3(Math.cos(angle) * r, y, Math.sin(angle) * r);
+          
+          // Honeycomb connectivity logic:
+          // Each vertex connects to 3 others.
+          // In our grid (i, j):
+          // If (i + j) is even, connect to (i, j+1)
+          // If (i + j) is odd, connect to (i+1, j) and (i-1, j) is redundant
+          
+          if ((i + j) % 2 === 0) {
+            // Vertical-ish connector
+            if (j < density * 2) {
+              const pUp = new THREE.Vector3(Math.cos(angle) * nextRowR, nextRowY, Math.sin(angle) * nextRowR);
+              geoms.push(createStrut(pCurrent, pUp));
+            }
+          } else {
+            // Horizontal-ish connector
+            const pRight = new THREE.Vector3(Math.cos(nextAngle) * r, y, Math.sin(nextAngle) * r);
+            geoms.push(createStrut(pCurrent, pRight));
+          }
         }
       }
+      
+      // Add top and bottom rings for stability
+      const topRing = new THREE.TorusGeometry(topRadius, strutRadius, 8, segments);
+      topRing.rotateX(Math.PI / 2);
+      topRing.translate(0, height / 2, 0);
+      geoms.push(topRing);
+
+      const bottomRing = new THREE.TorusGeometry(bottomRadius, strutRadius, 8, segments);
+      bottomRing.rotateX(Math.PI / 2);
+      bottomRing.translate(0, -height / 2, 0);
+      geoms.push(bottomRing);
+
       geometry = BufferGeometryUtils.mergeGeometries(geoms);
       break;
     }
