@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { LithophaneParams } from '@/utils/lithophane-generator';
-import { Download, Image as ImageIcon, Layers, Maximize, Square, Circle, Heart, Crop, Sliders, Box, Settings2, Star } from 'lucide-react';
+import { Download, Image as ImageIcon, Layers, Maximize, Square, Circle, Heart, Crop, Sliders, Box, Settings2, Shield } from 'lucide-react';
 import { showSuccess } from '@/utils/toast';
 
 interface LithophaneControlsProps {
@@ -104,14 +104,6 @@ const LithophaneControls: React.FC<LithophaneControlsProps> = ({
               <Box className="w-3 h-3 mr-1" /> Curved
             </Button>
             <Button 
-              variant={params.type === 'cylinder' ? 'default' : 'outline'} 
-              size="sm"
-              onClick={() => updateParam('type', 'cylinder')}
-              className="h-8 text-[10px] py-0 px-2"
-            >
-              <Circle className="w-3 h-3 mr-1" /> Cylinder
-            </Button>
-            <Button 
               variant={params.type === 'circle' ? 'default' : 'outline'} 
               size="sm"
               onClick={() => updateParam('type', 'circle')}
@@ -127,10 +119,50 @@ const LithophaneControls: React.FC<LithophaneControlsProps> = ({
             >
               <Heart className="w-3 h-3 mr-1" /> Heart
             </Button>
+            <Button 
+              variant={params.type === 'badge' ? 'default' : 'outline'} 
+              size="sm"
+              onClick={() => updateParam('type', 'badge')}
+              className="h-8 text-[10px] py-0 px-2"
+            >
+              <Shield className="w-3 h-3 mr-1" /> Badge
+            </Button>
           </div>
         </div>
 
-        {/* Step 3: Adjustments */}
+        {/* Step 3: Border & Frame */}
+        <div className="space-y-3 p-3 bg-slate-50 rounded-lg border border-slate-100">
+          <div className="flex items-center justify-between">
+            <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-1">
+              <Layers className="w-3 h-3" /> Border & Frame
+            </Label>
+            <Switch checked={params.hasBorder} onCheckedChange={(v) => updateParam('hasBorder', v)} />
+          </div>
+          {params.hasBorder && (
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <div className="space-y-1">
+                <Label className="text-[9px]">Thick (mm)</Label>
+                <Input 
+                  type="number" step={0.1}
+                  value={params.borderThickness} 
+                  onChange={(e) => updateParam('borderThickness', parseFloat(e.target.value))} 
+                  className="h-8 text-xs"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[9px]">Height (mm)</Label>
+                <Input 
+                  type="number" step={0.1}
+                  value={params.borderHeight} 
+                  onChange={(e) => updateParam('borderHeight', parseFloat(e.target.value))} 
+                  className="h-8 text-xs"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Step 4: Adjustments */}
         <div className="space-y-3 p-3 bg-slate-50 rounded-lg border border-slate-100">
           <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-1">
             <Sliders className="w-3 h-3" /> Image Adjustments
@@ -175,10 +207,10 @@ const LithophaneControls: React.FC<LithophaneControlsProps> = ({
           </div>
         </div>
 
-        {/* Step 4: Model Settings */}
+        {/* Step 5: Model Settings */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">4. Model Settings</Label>
+            <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">5. Model Settings</Label>
             {imageData && (
               <Button variant="ghost" size="sm" onClick={fixAspectRatio} className="h-6 text-[9px] gap-1 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50">
                 <Maximize className="w-2 h-2" /> Fix Aspect

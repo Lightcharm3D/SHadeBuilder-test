@@ -102,6 +102,32 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     grid.position.y = 0.01;
     bedGroup.add(grid);
 
+    // Brand Label
+    const canvas = document.createElement('canvas');
+    canvas.width = 1024;
+    canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.fillStyle = 'rgba(0,0,0,0)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.font = 'bold 96px sans-serif';
+      ctx.fillStyle = '#6366f1';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('LightCharm 3D', 512, 128);
+    }
+    const brandTexture = new THREE.CanvasTexture(canvas);
+    const brandGeom = new THREE.PlaneGeometry(15, 4);
+    const brandMat = new THREE.MeshBasicMaterial({ 
+      map: brandTexture, 
+      transparent: true,
+      opacity: 0.5
+    });
+    const brandMesh = new THREE.Mesh(brandGeom, brandMat);
+    brandMesh.rotation.x = -Math.PI / 2;
+    brandMesh.position.set(0, 0.02, bedSize / 2 - 3); 
+    bedGroup.add(brandMesh);
+
     scene.add(bedGroup);
 
     const controls = new OrbitControls(camera, renderer.domElement);
