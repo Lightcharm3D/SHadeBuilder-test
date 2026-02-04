@@ -211,8 +211,8 @@ const Index = () => {
             <div className="absolute bottom-4 right-4 z-30">
               <Drawer>
                 <DrawerTrigger asChild>
-                  <Button className="w-14 h-14 rounded-full brand-gradient shadow-2xl flex items-center justify-center text-white">
-                    <Settings2 className="w-6 h-6" />
+                  <Button className="w-16 h-16 rounded-full brand-gradient shadow-2xl flex items-center justify-center text-white p-0 overflow-hidden">
+                    <img src="/settings-icon.png" alt="Settings" className="w-full h-full object-cover" />
                   </Button>
                 </DrawerTrigger>
                 <DrawerContent className="h-[85vh] bg-white rounded-t-[2.5rem]">
