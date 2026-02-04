@@ -356,16 +356,24 @@ function generateLithophaneLampshade(params: LampshadeParams): THREE.BufferGeome
     ledge.translate(0, height / 2 + ledgeHeight - cylinderThickness / 2, 0);
     additionalGeometries.push(ledge);
     
-    // Spokes (support structures)
+    // Spokes (support structures) - creating them as thin rectangular beams
     const spokeCount = 4;
     for (let i = 0; i < spokeCount; i++) {
       const angle = (i / spokeCount) * Math.PI * 2;
-      const spoke = new THREE.BoxGeometry(spokeThickness, spokeDepth, cylinderDiameter / 2);
+      
+      // Create spoke as a thin box
+      const spokeLength = (cylinderDiameter / 2) - (ledgeDiameter / 2);
+      const spoke = new THREE.BoxGeometry(spokeThickness, spokeDepth, spokeLength);
+      
+      // Position the spoke between the main cylinder and the ledge
+      const spokeX = ((cylinderDiameter / 2) + (ledgeDiameter / 2)) / 2 * Math.cos(angle);
+      const spokeZ = ((cylinderDiameter / 2) + (ledgeDiameter / 2)) / 2 * Math.sin(angle);
       spoke.translate(
-        (cylinderDiameter / 4) * Math.cos(angle),
+        spokeX,
         height / 2 + ledgeHeight / 2,
-        (cylinderDiameter / 4) * Math.sin(angle)
+        spokeZ
       );
+      
       additionalGeometries.push(spoke);
     }
   }
