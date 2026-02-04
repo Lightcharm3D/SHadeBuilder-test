@@ -9,7 +9,8 @@ import { LithophaneParams, generateLithophaneGeometry } from '@/utils/lithophane
 import { STLExporter } from 'three/examples/jsm/exporters/STLExporter.js';
 import * as THREE from 'three';
 import { showSuccess, showError } from '@/utils/toast';
-import { ArrowLeft, Sparkles, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, Sparkles, Image as ImageIcon, Cpu, ChevronRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const LithophaneGenerator = () => {
   const [params, setParams] = useState<LithophaneParams>({
@@ -140,33 +141,47 @@ const LithophaneGenerator = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
-      <header className="h-16 border-b border-slate-200 bg-white px-4 flex items-center justify-between shrink-0 z-10">
-        <div className="flex items-center gap-2">
-          <Link to="/" className="p-2 hover:bg-slate-100 rounded-full transition-colors">
-            <ArrowLeft className="w-5 h-5 text-slate-600" />
+      <header className="h-20 border-b border-slate-200 bg-white/80 backdrop-blur-2xl px-8 flex items-center justify-between shrink-0 z-30 sticky top-0">
+        <div className="flex items-center gap-6">
+          <Link to="/" className="p-2.5 hover:bg-slate-100 rounded-2xl transition-all group">
+            <ArrowLeft className="w-5 h-5 text-slate-400 group-hover:text-indigo-600 transition-colors" />
           </Link>
-          <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-indigo-200">
-            <Sparkles className="w-4 h-4" fill="currentColor" />
+          <div className="relative group">
+            <div className="absolute -inset-2 brand-gradient rounded-2xl blur-xl opacity-20 group-hover:opacity-40 transition duration-500"></div>
+            <div className="relative w-12 h-12 brand-gradient rounded-2xl flex items-center justify-center text-white shadow-2xl transform group-hover:scale-105 transition-transform duration-300">
+              <ImageIcon className="w-6 h-6" />
+            </div>
           </div>
           <div>
-            <h1 className="text-base font-bold text-slate-900 leading-none">ShadeBuilder</h1>
-            <p className="text-[10px] text-slate-500 font-medium">Custom Shape Studio</p>
+            <h1 className="text-xl font-black tracking-tighter text-slate-900 leading-none flex items-center gap-2">
+              LITHO<span className="brand-text-gradient">STUDIO</span>
+              <span className="px-2 py-0.5 rounded-lg bg-indigo-600 text-white text-[9px] font-black uppercase tracking-widest ml-2 shadow-lg shadow-indigo-200">Pro</span>
+            </h1>
+            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-[0.4em] mt-1.5">Custom Shape Generator</p>
           </div>
+        </div>
+        
+        <div className="flex items-center gap-4">
+          <div className="h-8 w-px bg-slate-200 mx-2" />
+          <Button variant="ghost" size="icon" className="rounded-2xl hover:bg-slate-100 h-11 w-11">
+            <Sparkles className="w-5 h-5 text-slate-400" />
+          </Button>
         </div>
       </header>
       
-      <main className="flex-1 flex flex-col p-2 gap-4 overflow-hidden">
-        <div className="flex-1 relative min-h-[300px] bg-slate-950 rounded-xl shadow-lg border border-slate-800">
+      <main className="flex-1 flex flex-col lg:flex-row p-6 gap-8 overflow-hidden max-w-[1920px] mx-auto w-full">
+        <div className="flex-1 relative min-h-[500px] bg-slate-950 rounded-[3rem] shadow-2xl border border-slate-800 overflow-hidden studio-shadow group">
+          <div className="absolute inset-0 scanline opacity-20 pointer-events-none z-10"></div>
           <LithophaneViewport geometry={geometry} />
           
           {!imageData && !imagePreview && (
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="bg-slate-900/80 backdrop-blur-md p-4 rounded-2xl border border-slate-700 text-center max-w-xs">
-                <div className="w-12 h-12 bg-indigo-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <ImageIcon className="w-6 h-6 text-indigo-400" />
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+              <div className="bg-slate-900/60 backdrop-blur-3xl p-10 rounded-[3rem] border border-white/10 text-center max-w-md shadow-2xl">
+                <div className="w-16 h-16 bg-indigo-500/20 rounded-[1.5rem] flex items-center justify-center mx-auto mb-6 shadow-inner">
+                  <ImageIcon className="w-8 h-8 text-indigo-400" />
                 </div>
-                <h3 className="text-white font-bold text-lg mb-1">Custom Shape Studio</h3>
-                <p className="text-slate-400 text-xs leading-relaxed">
+                <h3 className="text-white font-black text-2xl mb-3 tracking-tight">Custom Shape Studio</h3>
+                <p className="text-slate-400 text-sm leading-relaxed font-medium">
                   Upload a photo and choose a shape. Perfect for keychains and personalized gifts.
                 </p>
               </div>
@@ -174,7 +189,7 @@ const LithophaneGenerator = () => {
           )}
         </div>
         
-        <div className="w-full">
+        <div className="w-full lg:w-[480px] shrink-0">
           <LithophaneControls 
             params={params} 
             setParams={setParams} 
@@ -199,9 +214,9 @@ const LithophaneGenerator = () => {
         />
       )}
       
-      <footer className="py-3 border-t border-slate-200 bg-white text-center">
-        <p className="text-[10px] text-slate-400">
-          © {new Date().getFullYear()} LightCharm 3D. Optimized for 3D Printing.
+      <footer className="py-8 px-12 border-t border-slate-200 bg-white text-center">
+        <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.3em]">
+          © {new Date().getFullYear()} LightCharm 3D Studio. Optimized for 3D Printing.
         </p>
       </footer>
     </div>

@@ -8,7 +8,7 @@ import { LampshadeParams, LampshadeType, SilhouetteType } from '@/utils/geometry
 import { STLExporter } from 'three/examples/jsm/exporters/STLExporter.js';
 import * as THREE from 'three';
 import { showSuccess, showError } from '@/utils/toast';
-import { Ruler, Image as ImageIcon, Box, Lightbulb, ChevronRight, Weight, Sparkles, Cpu } from 'lucide-react';
+import { Ruler, Image as ImageIcon, Box, Lightbulb, ChevronRight, Weight, Sparkles, Cpu, Activity } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const DEFAULT_PARAMS: LampshadeParams = {
@@ -131,40 +131,41 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
-      <header className="h-20 border-b border-slate-200 bg-white/90 backdrop-blur-xl px-8 flex items-center justify-between shrink-0 z-30 sticky top-0">
-        <div className="flex items-center gap-5">
+      <header className="h-20 border-b border-slate-200 bg-white/80 backdrop-blur-2xl px-8 flex items-center justify-between shrink-0 z-30 sticky top-0">
+        <div className="flex items-center gap-6">
           <div className="relative group">
-            <div className="absolute -inset-2 brand-gradient rounded-2xl blur-lg opacity-20 group-hover:opacity-40 transition duration-500"></div>
+            <div className="absolute -inset-2 brand-gradient rounded-2xl blur-xl opacity-20 group-hover:opacity-40 transition duration-500"></div>
             <div className="relative w-12 h-12 brand-gradient rounded-2xl flex items-center justify-center text-white shadow-2xl transform group-hover:scale-105 transition-transform duration-300">
               <Cpu className="w-6 h-6" />
             </div>
           </div>
           <div>
-            <h1 className="text-xl font-black tracking-tighter text-slate-900 leading-none flex items-center gap-1.5">
+            <h1 className="text-xl font-black tracking-tighter text-slate-900 leading-none flex items-center gap-2">
               SHADE<span className="brand-text-gradient">BUILDER</span>
-              <span className="px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-600 text-[10px] font-black uppercase tracking-widest ml-2">Pro</span>
+              <span className="px-2 py-0.5 rounded-lg bg-indigo-600 text-white text-[9px] font-black uppercase tracking-widest ml-2 shadow-lg shadow-indigo-200">Pro</span>
             </h1>
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.3em] mt-1">Precision Geometry Engine</p>
+            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-[0.4em] mt-1.5">Precision Geometry Engine</p>
           </div>
         </div>
         
         <div className="flex items-center gap-4">
           <Link to="/lithophane">
-            <Button variant="outline" size="sm" className="gap-2 border-slate-200 hover:border-indigo-200 hover:bg-indigo-50 text-slate-600 hover:text-indigo-600 font-black text-[10px] uppercase tracking-widest h-10 px-5 rounded-xl transition-all">
-              <ImageIcon className="w-3.5 h-3.5" />
+            <Button variant="outline" size="sm" className="gap-2.5 border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 text-slate-600 hover:text-indigo-600 font-black text-[10px] uppercase tracking-widest h-11 px-6 rounded-2xl transition-all shadow-sm">
+              <ImageIcon className="w-4 h-4" />
               Lithophane Studio
-              <ChevronRight className="w-3 h-3 opacity-30" />
+              <ChevronRight className="w-3.5 h-3.5 opacity-30" />
             </Button>
           </Link>
           <div className="h-8 w-px bg-slate-200 mx-2" />
-          <Button variant="ghost" size="icon" className="rounded-full hover:bg-slate-100">
+          <Button variant="ghost" size="icon" className="rounded-2xl hover:bg-slate-100 h-11 w-11">
             <Sparkles className="w-5 h-5 text-slate-400" />
           </Button>
         </div>
       </header>
       
-      <main className="flex-1 flex flex-col lg:flex-row p-6 gap-6 overflow-hidden max-w-[1800px] mx-auto w-full">
-        <div className="flex-1 relative min-h-[500px] bg-slate-950 rounded-[2.5rem] shadow-2xl border border-slate-800 overflow-hidden studio-shadow group">
+      <main className="flex-1 flex flex-col lg:flex-row p-6 gap-8 overflow-hidden max-w-[1920px] mx-auto w-full">
+        <div className="flex-1 relative min-h-[500px] bg-slate-950 rounded-[3rem] shadow-2xl border border-slate-800 overflow-hidden studio-shadow group">
+          <div className="absolute inset-0 scanline opacity-20 pointer-events-none z-10"></div>
           <LampshadeViewport 
             params={params} 
             material={material}
@@ -174,43 +175,43 @@ const Index = () => {
           />
           
           {/* Viewport Overlays */}
-          <div className="absolute top-8 left-8 flex flex-col gap-4 pointer-events-none">
-            <div className="bg-slate-900/40 backdrop-blur-2xl p-5 rounded-3xl border border-white/10 shadow-2xl transform group-hover:translate-x-1 transition-transform duration-500">
-              <div className="flex items-center gap-2.5 text-indigo-400 mb-4">
-                <div className="w-6 h-6 rounded-lg bg-indigo-500/20 flex items-center justify-center">
-                  <Ruler className="w-3.5 h-3.5" />
+          <div className="absolute top-10 left-10 flex flex-col gap-6 pointer-events-none z-20">
+            <div className="bg-slate-900/60 backdrop-blur-3xl p-6 rounded-[2rem] border border-white/10 shadow-2xl transform group-hover:translate-x-2 transition-transform duration-700">
+              <div className="flex items-center gap-3 text-indigo-400 mb-5">
+                <div className="w-7 h-7 rounded-xl bg-indigo-500/20 flex items-center justify-center">
+                  <Activity className="w-4 h-4 animate-pulse" />
                 </div>
-                <span className="text-[11px] font-black uppercase tracking-[0.2em]">Live Telemetry</span>
+                <span className="text-[11px] font-black uppercase tracking-[0.3em]">Live Telemetry</span>
               </div>
-              <div className="space-y-3">
-                <div className="flex justify-between gap-12">
-                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Z-Height</span>
-                  <span className="text-[11px] font-mono font-bold text-white">{(params.height * 10).toFixed(1)} mm</span>
+              <div className="space-y-4">
+                <div className="flex justify-between gap-16">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Z-Height</span>
+                  <span className="text-[12px] font-mono font-bold text-white">{(params.height * 10).toFixed(1)} mm</span>
                 </div>
-                <div className="flex justify-between gap-12">
-                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Max Width</span>
-                  <span className="text-[11px] font-mono font-bold text-white">{(Math.max(params.topRadius, params.bottomRadius) * 20).toFixed(1)} mm</span>
+                <div className="flex justify-between gap-16">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Max Width</span>
+                  <span className="text-[12px] font-mono font-bold text-white">{(Math.max(params.topRadius, params.bottomRadius) * 20).toFixed(1)} mm</span>
                 </div>
-                <div className="h-px bg-white/5 my-1" />
-                <div className="flex justify-between gap-12">
-                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
-                    <Weight className="w-3 h-3 text-indigo-400" /> Est. Mass
+                <div className="h-px bg-white/10 my-2" />
+                <div className="flex justify-between gap-16">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest flex items-center gap-2">
+                    <Weight className="w-3.5 h-3.5 text-indigo-400" /> Est. Mass
                   </span>
-                  <span className="text-[11px] font-mono font-bold text-indigo-300">{estimateWeight()} g</span>
+                  <span className="text-[12px] font-mono font-bold text-indigo-300">{estimateWeight()} g</span>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="absolute bottom-8 left-8 pointer-events-none">
-            <div className="flex items-center gap-3 bg-black/20 backdrop-blur-md px-4 py-2 rounded-full border border-white/5">
-              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[9px] font-black uppercase tracking-[0.3em] text-white/50">Engine Active: Real-time Mesh</span>
+          <div className="absolute bottom-10 left-10 pointer-events-none z-20">
+            <div className="flex items-center gap-4 bg-black/40 backdrop-blur-xl px-6 py-3 rounded-full border border-white/10 shadow-2xl">
+              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-white/60">Engine Active: Real-time Mesh</span>
             </div>
           </div>
         </div>
         
-        <div className="w-full lg:w-[450px] shrink-0">
+        <div className="w-full lg:w-[480px] shrink-0">
           <ControlPanel 
             params={params} 
             setParams={setParams} 
@@ -227,23 +228,23 @@ const Index = () => {
         </div>
       </main>
       
-      <footer className="py-6 px-10 border-t border-slate-200 bg-white flex items-center justify-between">
-        <div className="flex items-center gap-6">
-          <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em]">
+      <footer className="py-8 px-12 border-t border-slate-200 bg-white flex items-center justify-between">
+        <div className="flex items-center gap-8">
+          <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.3em]">
             © {new Date().getFullYear()} LightCharm 3D Studio
           </p>
-          <div className="h-4 w-px bg-slate-200" />
-          <div className="flex gap-4">
-            <span className="text-[10px] text-slate-300 font-bold uppercase tracking-widest">Geometry Engine v2.5.0-PRO</span>
+          <div className="h-5 w-px bg-slate-200" />
+          <div className="flex gap-6">
+            <span className="text-[10px] text-slate-300 font-bold uppercase tracking-widest">Geometry Engine v2.6.0-PREMIUM</span>
           </div>
         </div>
-        <div className="flex items-center gap-6">
-          <div className="flex -space-x-2">
-            {[1,2,3].map(i => (
-              <div key={i} className="w-6 h-6 rounded-full border-2 border-white bg-slate-100" />
+        <div className="flex items-center gap-8">
+          <div className="flex -space-x-3">
+            {[1,2,3,4].map(i => (
+              <div key={i} className="w-7 h-7 rounded-full border-2 border-white bg-slate-100 shadow-sm" />
             ))}
           </div>
-          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">1.2k Designs Exported Today</span>
+          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">1.5k Designs Exported Today</span>
         </div>
       </footer>
     </div>
