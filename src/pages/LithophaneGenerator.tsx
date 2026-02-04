@@ -8,7 +8,7 @@ import { LithophaneParams, generateLithophaneGeometry, getImageData } from '@/ut
 import { STLExporter } from 'three/examples/jsm/exporters/STLExporter.js';
 import * as THREE from 'three';
 import { showSuccess, showError } from '@/utils/toast';
-import { Zap, ArrowLeft, Info, Sparkles, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, Sparkles, Image as ImageIcon } from 'lucide-react';
 
 const LithophaneGenerator = () => {
   const [params, setParams] = useState<LithophaneParams>({
@@ -23,7 +23,7 @@ const LithophaneGenerator = () => {
     inverted: false,
     brightness: 0,
     contrast: 20,
-    sharpness: 0,
+    smoothing: 1.5, // Default smoothing
   });
 
   const [imageData, setImageData] = useState<ImageData | null>(null);
@@ -49,16 +49,16 @@ const LithophaneGenerator = () => {
   const handleApplyPreset = (preset: string) => {
     switch (preset) {
       case 'portrait':
-        setParams({ ...params, width: 8, height: 10, resolution: 200, contrast: 30 });
+        setParams({ ...params, width: 8, height: 10, resolution: 200, contrast: 30, smoothing: 1.0 });
         break;
       case 'landscape':
-        setParams({ ...params, width: 15, height: 10, resolution: 200, contrast: 25 });
+        setParams({ ...params, width: 15, height: 10, resolution: 200, contrast: 25, smoothing: 1.5 });
         break;
       case 'keychain':
-        setParams({ ...params, width: 4, height: 4, resolution: 100, baseThickness: 1.2, maxThickness: 2.0 });
+        setParams({ ...params, width: 4, height: 4, resolution: 100, baseThickness: 1.2, maxThickness: 2.0, smoothing: 0.5 });
         break;
       case 'high_detail':
-        setParams({ ...params, resolution: 300, contrast: 40 });
+        setParams({ ...params, resolution: 300, contrast: 40, smoothing: 0.5 });
         break;
     }
     showSuccess(`Applied ${preset} preset`);
@@ -88,7 +88,7 @@ const LithophaneGenerator = () => {
       link.download = `lithophane-${Date.now()}.stl`;
       link.click();
       URL.revokeObjectURL(url);
-      showSuccess("Watertight STL exported!");
+      showSuccess("Smooth watertight STL exported!");
     } catch (err) {
       showError("Failed to export STL");
     }
@@ -122,7 +122,7 @@ const LithophaneGenerator = () => {
                   <ImageIcon className="w-8 h-8 text-indigo-400" />
                 </div>
                 <h3 className="text-white font-bold text-xl mb-2">Ready to Generate</h3>
-                <p className="text-slate-400 text-sm leading-relaxed">Upload a high-contrast photo to begin. For best results, use images with clear subjects and distinct lighting.</p>
+                <p className="text-slate-400 text-sm leading-relaxed">Upload a high-contrast photo to begin. Our engine uses bilinear interpolation for ultra-smooth 3D prints.</p>
               </div>
             </div>
           )}

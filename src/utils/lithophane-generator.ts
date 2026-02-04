@@ -14,7 +14,7 @@ export interface LithophaneParams {
   inverted: boolean;
   brightness: number;
   contrast: number;
-  sharpness: number;
+  smoothing: number; // New parameter for noise reduction
 }
 
 export function generateLithophaneGeometry(
@@ -24,7 +24,7 @@ export function generateLithophaneGeometry(
   const { 
     width, height, minThickness, maxThickness, baseThickness, 
     resolution, type, curveRadius, inverted,
-    brightness, contrast 
+    brightness, contrast, smoothing
   } = params;
   
   const aspect = imageData.width / imageData.height;
@@ -33,26 +33,48 @@ export function generateLithophaneGeometry(
   
   const vertices: number[] = [];
   const indices: number[] = [];
-  const normals: number[] = [];
 
-  // Helper to get adjusted brightness with contrast enhancement
-  const getVal = (u: number, v: number) => {
-    const x = Math.floor(u * (imageData.width - 1));
-    const y = Math.floor((1 - v) * (imageData.height - 1));
-    const idx = (y * imageData.width + x) * 4;
+  // Pre-process image data for smoothing if requested
+  const processedData = smoothing > 0 ? applySmoothing(imageData, smoothing) : imageData.data;
+
+  // Bilinear interpolation helper
+  const getInterpolatedVal = (u: number, v: number) => {
+    const x = u * (imageData.width - 1);
+    const y = (1 - v) * (imageData.height - 1);
     
-    let r = imageData.data[idx];
-    let g = imageData.data[idx + 1];
-    let b = imageData.data[idx + 2];
+    const x1 = Math.floor(x);
+    const y1 = Math.floor(y);
+    const x2 = Math.min(x1 + 1, imageData.width - 1);
+    const y2 = Math.min(y1 + 1, imageData.height - 1);
     
-    // Apply Brightness & Contrast
-    const bFactor = brightness;
-    const cFactor = (259 * (contrast + 255)) / (255 * (259 - contrast));
+    const dx = x - x1;
+    const dy = y - y1;
     
-    const process = (val: number) => Math.min(255, Math.max(0, cFactor * (val + bFactor - 128) + 128));
+    const getPixelGray = (px: number, py: number) => {
+      const idx = (py * imageData.width + px) * 4;
+      let r = processedData[idx];
+      let g = processedData[idx + 1];
+      let b = processedData[idx + 2];
+      
+      // Apply Brightness & Contrast
+      const bFactor = brightness;
+      const cFactor = (259 * (contrast + 255)) / (255 * (259 - contrast));
+      const process = (val: number) => Math.min(255, Math.max(0, cFactor * (val + bFactor - 128) + 128));
+      
+      const gray = (process(r) * 0.299 + process(g) * 0.587 + process(b) * 0.114) / 255;
+      return inverted ? gray : 1 - gray;
+    };
+
+    const v11 = getPixelGray(x1, y1);
+    const v21 = getPixelGray(x2, y1);
+    const v12 = getPixelGray(x1, y2);
+    const v22 = getPixelGray(x2, y2);
     
-    const gray = (process(r) * 0.299 + process(g) * 0.587 + process(b) * 0.114) / 255;
-    return inverted ? gray : 1 - gray;
+    // Bilinear formula
+    return (v11 * (1 - dx) * (1 - dy)) +
+           (v21 * dx * (1 - dy)) +
+           (v12 * (1 - dx) * dy) +
+           (v22 * dx * dy);
   };
 
   // 1. Generate Front Surface
@@ -61,7 +83,7 @@ export function generateLithophaneGeometry(
       const u = i / (gridX - 1);
       const v = j / (gridY - 1);
       
-      const bVal = getVal(u, v);
+      const bVal = getInterpolatedVal(u, v);
       const thickness = baseThickness + minThickness + bVal * (maxThickness - minThickness);
       
       const xPos = (u - 0.5) * width;
@@ -123,7 +145,6 @@ export function generateLithophaneGeometry(
     indices.push(idx2, idx4, idx3);
   };
 
-  // Top & Bottom
   for (let i = 0; i < gridX - 1; i++) {
     // Bottom
     addSide(i, i + 1, i + backOffset, i + 1 + backOffset);
@@ -132,7 +153,6 @@ export function generateLithophaneGeometry(
     addSide(topStart + i + 1, topStart + i, topStart + i + 1 + backOffset, topStart + i + backOffset);
   }
 
-  // Left & Right
   for (let j = 0; j < gridY - 1; j++) {
     // Left
     const left1 = j * gridX;
@@ -150,6 +170,38 @@ export function generateLithophaneGeometry(
   geometry.computeVertexNormals();
   
   return geometry;
+}
+
+// Simple box blur for smoothing
+function applySmoothing(imageData: ImageData, radius: number): Uint8ClampedArray {
+  const data = new Uint8ClampedArray(imageData.data);
+  const width = imageData.width;
+  const height = imageData.height;
+  const r = Math.floor(radius);
+  
+  for (let pass = 0; pass < 2; pass++) { // Two passes for better quality
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        let rSum = 0, gSum = 0, bSum = 0, count = 0;
+        for (let ky = -r; ky <= r; ky++) {
+          for (let kx = -r; kx <= r; kx++) {
+            const px = Math.min(width - 1, Math.max(0, x + kx));
+            const py = Math.min(height - 1, Math.max(0, y + ky));
+            const idx = (py * width + px) * 4;
+            rSum += data[idx];
+            gSum += data[idx + 1];
+            bSum += data[idx + 2];
+            count++;
+          }
+        }
+        const outIdx = (y * width + x) * 4;
+        data[outIdx] = rSum / count;
+        data[outIdx + 1] = gSum / count;
+        data[outIdx + 2] = bSum / count;
+      }
+    }
+  }
+  return data;
 }
 
 export function getImageData(file: File): Promise<ImageData> {

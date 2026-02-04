@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { LithophaneParams, LithophaneType } from '@/utils/lithophane-generator';
-import { Upload, Download, Image as ImageIcon, Settings2, Layers, Sun, Contrast, Zap } from 'lucide-react';
+import { Download, Image as ImageIcon, Sun, Contrast, Zap, Sparkles } from 'lucide-react';
 
 interface LithophaneControlsProps {
   params: LithophaneParams;
@@ -79,6 +79,14 @@ const LithophaneControls: React.FC<LithophaneControlsProps> = ({
                 <span>{params.contrast}</span>
               </div>
               <Slider value={[params.contrast]} min={-100} max={100} step={1} onValueChange={([v]) => updateParam('contrast', v)} />
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex justify-between text-[10px] font-medium">
+                <span className="flex items-center gap-1"><Sparkles className="w-3 h-3" /> Smoothing</span>
+                <span>{params.smoothing}</span>
+              </div>
+              <Slider value={[params.smoothing]} min={0} max={5} step={0.5} onValueChange={([v]) => updateParam('smoothing', v)} />
             </div>
           </div>
         </div>
