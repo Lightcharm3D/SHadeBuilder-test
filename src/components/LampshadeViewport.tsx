@@ -88,6 +88,7 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ReinhardToneMapping;
     containerRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
@@ -98,6 +99,17 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     const mainLight = new THREE.DirectionalLight(0xffffff, 1.0);
     mainLight.position.set(30, 50, 30);
     mainLight.castShadow = true;
+    
+    // Expand shadow camera frustum to prevent square clipping
+    mainLight.shadow.camera.left = -40;
+    mainLight.shadow.camera.right = 40;
+    mainLight.shadow.camera.top = 40;
+    mainLight.shadow.camera.bottom = -40;
+    mainLight.shadow.camera.far = 200;
+    mainLight.shadow.mapSize.width = 1024;
+    mainLight.shadow.mapSize.height = 1024;
+    mainLight.shadow.bias = -0.001;
+    
     scene.add(mainLight);
 
     const bulbLight = new THREE.PointLight(0xffaa44, 0, 100);

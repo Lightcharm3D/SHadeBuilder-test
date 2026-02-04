@@ -50,8 +50,17 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
     const mainLight = new THREE.DirectionalLight(0xffffff, 1.0);
     mainLight.position.set(100, 200, 100);
     mainLight.castShadow = true;
-    mainLight.shadow.mapSize.width = 1024;
-    mainLight.shadow.mapSize.height = 1024;
+    
+    // Expand shadow camera frustum to prevent square clipping
+    mainLight.shadow.camera.left = -200;
+    mainLight.shadow.camera.right = 200;
+    mainLight.shadow.camera.top = 200;
+    mainLight.shadow.camera.bottom = -200;
+    mainLight.shadow.camera.far = 1000;
+    mainLight.shadow.mapSize.width = 2048;
+    mainLight.shadow.mapSize.height = 2048;
+    mainLight.shadow.bias = -0.0005;
+    
     scene.add(mainLight);
 
     const backlight = new THREE.PointLight(0xfff4e0, 0, 500);
