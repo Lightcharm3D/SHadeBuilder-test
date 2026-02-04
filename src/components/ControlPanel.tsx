@@ -1,21 +1,30 @@
 "use client";
 
 import React from 'react';
-import { Slider } from '@/components/ui/button'; // Note: Using standard inputs for better control if shadcn slider is too basic
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { LampshadeParams, LampshadeType } from '@/utils/geometry-generator';
-import { Download, RefreshCw, Sparkles } from 'lucide-react';
+import { Download, RefreshCw, Sparkles, Eye, Box } from 'lucide-react';
 
 interface ControlPanelProps {
   params: LampshadeParams;
   setParams: (params: LampshadeParams) => void;
+  showWireframe: boolean;
+  setShowWireframe: (show: boolean) => void;
   onExport: () => void;
   onRandomize: () => void;
 }
 
-const ControlPanel: React.FC<ControlPanelProps> = ({ params, setParams, onExport, onRandomize }) => {
+const ControlPanel: React.FC<ControlPanelProps> = ({ 
+  params, 
+  setParams, 
+  showWireframe, 
+  setShowWireframe, 
+  onExport, 
+  onRandomize 
+}) => {
   const updateParam = (key: keyof LampshadeParams, value: any) => {
     setParams({ ...params, [key]: value });
   };
@@ -23,15 +32,19 @@ const ControlPanel: React.FC<ControlPanelProps> = ({ params, setParams, onExport
   return (
     <div className="flex flex-col gap-6 p-6 bg-white rounded-xl border border-slate-200 shadow-sm h-full overflow-y-auto">
       <div className="space-y-2">
-        <h2 className="text-xl font-bold text-slate-900">Design Studio</h2>
+        <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+          <Box className="w-5 h-5 text-indigo-600" />
+          Design Studio
+        </h2>
         <p className="text-sm text-slate-500">Customize your parametric lampshade</p>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-6">
+        {/* Template Selection */}
         <div className="space-y-2">
-          <Label>Base Template</Label>
+          <Label className="text-xs font-bold uppercase tracking-wider text-slate-400">Base Template</Label>
           <Select value={params.type} onValueChange={(v) => updateParam('type', v as LampshadeType)}>
-            <SelectTrigger>
+            <SelectTrigger className="bg-slate-50 border-slate-200">
               <SelectValue placeholder="Select shape" />
             </SelectTrigger>
             <SelectContent>
@@ -45,85 +58,89 @@ const ControlPanel: React.FC<ControlPanelProps> = ({ params, setParams, onExport
           </Select>
         </div>
 
-        <div className="space-y-4 pt-2">
+        {/* Preview Settings */}
+        <div className="p-3 bg-slate-50 rounded-lg space-y-3 border border-slate-100">
+          <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Preview Settings</Label>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Eye className="w-4 h-4 text-slate-500" />
+              <span className="text-sm font-medium text-slate-700">Wireframe Mode</span>
+            </div>
+            <Switch checked={showWireframe} onCheckedChange={setShowWireframe} />
+          </div>
+        </div>
+
+        {/* Geometry Sliders */}
+        <div className="space-y-4">
+          <Label className="text-xs font-bold uppercase tracking-wider text-slate-400">Dimensions</Label>
+          
           <div className="space-y-2">
             <div className="flex justify-between">
-              <Label>Height</Label>
-              <span className="text-xs font-mono text-slate-400">{params.height}mm</span>
+              <Label className="text-sm">Height</Label>
+              <span className="text-xs font-mono text-indigo-600 font-bold">{params.height * 10}mm</span>
             </div>
             <input 
               type="range" min="5" max="30" step="0.5" 
               value={params.height} 
               onChange={(e) => updateParam('height', parseFloat(e.target.value))}
-              className="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+              className="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-indigo-600"
             />
           </div>
 
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <Label>Top Diameter</Label>
-              <span className="text-xs font-mono text-slate-400">{params.topRadius * 2}mm</span>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="text-xs">Top Radius</Label>
+              <input 
+                type="range" min="2" max="15" step="0.5" 
+                value={params.topRadius} 
+                onChange={(e) => updateParam('topRadius', parseFloat(e.target.value))}
+                className="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+              />
             </div>
-            <input 
-              type="range" min="2" max="15" step="0.5" 
-              value={params.topRadius} 
-              onChange={(e) => updateParam('topRadius', parseFloat(e.target.value))}
-              className="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-indigo-600"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <Label>Bottom Diameter</Label>
-              <span className="text-xs font-mono text-slate-400">{params.bottomRadius * 2}mm</span>
+            <div className="space-y-2">
+              <Label className="text-xs">Bottom Radius</Label>
+              <input 
+                type="range" min="2" max="15" step="0.5" 
+                value={params.bottomRadius} 
+                onChange={(e) => updateParam('bottomRadius', parseFloat(e.target.value))}
+                className="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+              />
             </div>
-            <input 
-              type="range" min="2" max="15" step="0.5" 
-              value={params.bottomRadius} 
-              onChange={(e) => updateParam('bottomRadius', parseFloat(e.target.value))}
-              className="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-indigo-600"
-            />
           </div>
 
           <div className="space-y-2">
             <div className="flex justify-between">
-              <Label>Segments (Resolution)</Label>
-              <span className="text-xs font-mono text-slate-400">{params.segments}</span>
+              <Label className="text-sm">Resolution</Label>
+              <span className="text-xs font-mono text-slate-500">{params.segments} faces</span>
             </div>
             <input 
               type="range" min="3" max="128" step="1" 
               value={params.segments} 
               onChange={(e) => updateParam('segments', parseInt(e.target.value))}
-              className="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+              className="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-indigo-600"
             />
           </div>
 
           {(params.type === 'spiral' || params.type === 'twisted') && (
             <div className="space-y-2">
-              <div className="flex justify-between">
-                <Label>Twist Angle</Label>
-                <span className="text-xs font-mono text-slate-400">{params.twist}°</span>
-              </div>
+              <Label className="text-sm">Twist Angle ({params.twist}°)</Label>
               <input 
                 type="range" min="-360" max="360" step="10" 
                 value={params.twist} 
                 onChange={(e) => updateParam('twist', parseFloat(e.target.value))}
-                className="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                className="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-indigo-600"
               />
             </div>
           )}
 
           {(params.type === 'wave' || params.type === 'ribbed') && (
             <div className="space-y-2">
-              <div className="flex justify-between">
-                <Label>Pattern Density</Label>
-                <span className="text-xs font-mono text-slate-400">{params.density}</span>
-              </div>
+              <Label className="text-sm">Pattern Density</Label>
               <input 
                 type="range" min="1" max="50" step="1" 
                 value={params.density} 
                 onChange={(e) => updateParam('density', parseFloat(e.target.value))}
-                className="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                className="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-indigo-600"
               />
             </div>
           )}
@@ -132,7 +149,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({ params, setParams, onExport
 
       <div className="mt-auto pt-6 space-y-3">
         <div className="grid grid-cols-2 gap-3">
-          <Button variant="outline" onClick={onRandomize} className="w-full gap-2">
+          <Button variant="outline" onClick={onRandomize} className="w-full gap-2 border-slate-200 hover:bg-slate-50">
             <RefreshCw className="w-4 h-4" />
             Randomize
           </Button>
@@ -141,13 +158,10 @@ const ControlPanel: React.FC<ControlPanelProps> = ({ params, setParams, onExport
             AI Suggest
           </Button>
         </div>
-        <Button onClick={onExport} className="w-full gap-2 bg-slate-900 hover:bg-slate-800 text-white">
+        <Button onClick={onExport} className="w-full gap-2 bg-slate-900 hover:bg-slate-800 text-white shadow-lg shadow-slate-200">
           <Download className="w-4 h-4" />
           Export STL for 3D Print
         </Button>
-        <p className="text-[10px] text-center text-slate-400 uppercase tracking-widest font-semibold">
-          10,000+ Possible Combinations
-        </p>
       </div>
     </div>
   );
