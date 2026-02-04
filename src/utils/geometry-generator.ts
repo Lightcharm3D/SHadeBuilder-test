@@ -96,10 +96,8 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       const width = params.slotWidth || 0.2;
       const geoms: THREE.BufferGeometry[] = [];
       
-      // Vertical Fins
       for (let i = 0; i < count; i++) {
         const angle = (i / count) * Math.PI * 2;
-        const finProfile = getProfilePoints(20);
         const finGeom = new THREE.PlaneGeometry(1, height, 1, 20);
         const pos = finGeom.attributes.position;
         
@@ -107,17 +105,15 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
           const py = pos.getY(j);
           const normY = (py + height / 2) / height;
           const r = topRadius + (bottomRadius - topRadius) * normY;
-          // Adjust X based on profile radius
           const px = pos.getX(j);
           if (px > 0) pos.setX(j, r);
-          else pos.setX(j, r - 2); // 2cm deep fins
+          else pos.setX(j, r - 2); 
         }
         
         finGeom.rotateY(angle);
         geoms.push(finGeom);
       }
       
-      // Support Rings
       const ringTop = new THREE.TorusGeometry(topRadius, width, 8, segments);
       ringTop.rotateX(Math.PI / 2);
       ringTop.translate(0, height / 2, 0);
@@ -138,7 +134,6 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       const pos = geometry.attributes.position;
       const points: THREE.Vector3[] = [];
       
-      // Generate random seed points on the surface
       for (let i = 0; i < cells; i++) {
         const angle = pseudoNoise(i, 0, seed) * Math.PI * 2;
         const h = (pseudoNoise(0, i, seed) - 0.5) * height;
@@ -154,7 +149,6 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
           if (d < minDist) minDist = d;
         });
         
-        // Create "valleys" at cell boundaries
         const factor = 1 - Math.exp(-minDist * 0.5) * 0.2;
         pos.setX(i, v.x * factor);
         pos.setZ(i, v.z * factor);
@@ -275,6 +269,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       geometry = new THREE.LatheGeometry(profile, segments);
   }
 
+  // Add Internal Ribs
   if (params.internalRibs > 0) {
     const ribGeoms: THREE.BufferGeometry[] = [];
     for (let i = 0; i < params.internalRibs; i++) {
@@ -291,6 +286,7 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     geometry = BufferGeometryUtils.mergeGeometries([geometry, ribsMerged]);
   }
 
+  // Add Lamp Fitter
   if (params.fitterType !== 'none') {
     const fitterGeom = generateFitterGeometry(params);
     geometry = BufferGeometryUtils.mergeGeometries([geometry, fitterGeom]);
@@ -303,14 +299,16 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
 function generateFitterGeometry(params: LampshadeParams): THREE.BufferGeometry {
   const { fitterType, fitterDiameter, fitterHeight, topRadius, height } = params;
   const geoms: THREE.BufferGeometry[] = [];
-  const fitterRadius = fitterDiameter / 20; 
+  const fitterRadius = fitterDiameter / 20; // mm to cm
   const yPos = height / 2 - fitterHeight;
   
+  // Central Ring
   const ring = new THREE.TorusGeometry(fitterRadius, 0.15, 8, 32);
   ring.rotateX(Math.PI / 2);
   ring.translate(0, yPos, 0);
   geoms.push(ring);
   
+  // Spokes
   const spokeCount = fitterType === 'spider' ? 3 : 4;
   for (let i = 0; i < spokeCount; i++) {
     const angle = (i / spokeCount) * Math.PI * 2;
