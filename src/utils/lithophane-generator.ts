@@ -76,27 +76,17 @@ export function generateLithophaneGeometry(
     const x = u - 0.5;
     const y = v - 0.5;
     
-    // Check if point is in the border area (outside the main shape but within border thickness)
-    const borderX = (0.5 - borderThickness / width) / 2;
-    const borderY = (0.5 - borderThickness / height) / 2;
+    // For all shapes, create a border by checking if we're in the outer edge
+    const outerX = 0.5;
+    const outerY = 0.5;
+    const innerX = 0.5 - (borderThickness / Math.max(width, height));
+    const innerY = 0.5 - (borderThickness / Math.max(width, height));
     
-    switch (type) {
-      case 'circle':
-        const outerRadius = 0.5;
-        const innerRadius = 0.5 - borderThickness / Math.min(width, height);
-        const dist = Math.sqrt(x * x + y * y);
-        return dist <= outerRadius && dist >= innerRadius;
-      case 'heart':
-      case 'badge':
-      default:
-        // For other shapes, create a rectangular border
-        const outerX = 0.5;
-        const outerY = 0.5;
-        const innerX = 0.5 - borderThickness / width;
-        const innerY = 0.5 - borderThickness / height;
-        return (Math.abs(x) <= outerX && Math.abs(y) <= outerY) && 
-               (Math.abs(x) >= innerX || Math.abs(y) >= innerY);
-    }
+    // Check if point is in the border area (outside the main shape but within border thickness)
+    const isInOuterBounds = Math.abs(x) <= outerX && Math.abs(y) <= outerY;
+    const isInInnerBounds = Math.abs(x) <= innerX && Math.abs(y) <= innerY;
+    
+    return isInOuterBounds && !isInInnerBounds && isInside(u, v);
   };
 
   const getInterpolatedVal = (u: number, v: number) => {
@@ -134,7 +124,7 @@ export function generateLithophaneGeometry(
 
       let thickness = baseThickness;
       if (inside) {
-        const bVal = getInterpolatedVal(u, v);
+        const bVal = inside ? getInterpolatedVal(u, v) : 0;
         thickness += minThickness + bVal * (maxThickness - minThickness);
       } else if (inBorder) {
         thickness += borderHeight;
