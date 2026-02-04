@@ -107,8 +107,8 @@ const Index = () => {
             <Zap className="w-6 h-6" fill="currentColor" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-slate-900 leading-none">LuminaGen</h1>
-            <p className="text-xs text-slate-500 font-medium">Parametric 3D Design</p>
+            <h1 className="text-lg font-bold text-slate-900 leading-none">ShadeBuilder</h1>
+            <p className="text-xs text-slate-500 font-medium">by LightCharm 3D</p>
           </div>
         </div>
         
