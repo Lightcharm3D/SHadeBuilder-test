@@ -78,7 +78,14 @@ const Index = () => {
     }
     try {
       const exporter = new STLExporter();
-      const result = exporter.parse(meshRef.current);
+      
+      // Clone the mesh to avoid modifying the live preview
+      const exportMesh = meshRef.current.clone();
+      // Scale from cm to mm (1 unit = 1mm in most slicers)
+      exportMesh.scale.set(10, 10, 10);
+      exportMesh.updateMatrixWorld();
+      
+      const result = exporter.parse(exportMesh);
       const fileName = `lampshade-${params.type}-${Date.now()}.stl`;
       
       await saveStlFile(result as string, fileName);
