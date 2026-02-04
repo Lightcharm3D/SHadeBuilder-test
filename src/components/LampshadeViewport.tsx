@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { LampshadeParams, generateLampshadeGeometry } from '@/utils/geometry-generator';
 import { Button } from '@/components/ui/button';
-import { Lightbulb, LightbulbOff, ShieldAlert } from 'lucide-react';
+import { Lightbulb, LightbulbOff, ShieldAlert, Scissors } from 'lucide-react';
 
 export interface MaterialParams {
   color: string;
@@ -38,101 +38,85 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
   const requestRef = useRef<number | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
   const bulbLightRef = useRef<THREE.PointLight | null>(null);
-  const bulbMeshRef = useRef<THREE.Mesh | null>(null);
   
   const [isLightOn, setIsLightOn] = useState(false);
+  const [isCutaway, setIsCutaway] = useState(false);
+
+  // Custom shader for overhang analysis
+  const overhangMaterial = useMemo(() => {
+    return new THREE.ShaderMaterial({
+      uniforms: {
+        uColor: { value: new THREE.Color(material.color) },
+        uThreshold: { value: Math.cos(Math.PI / 4) }, // 45 degrees
+      },
+      vertexShader: `
+        varying vec3 vNormal;
+        varying vec3 vWorldNormal;
+        void main() {
+          vNormal = normal;
+          vWorldNormal = normalize((modelMatrix * vec4(normal, 0.0)).xyz);
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        varying vec3 vWorldNormal;
+        uniform vec3 uColor;
+        uniform float uThreshold;
+        void main() {
+          float dotUp = dot(vWorldNormal, vec3(0.0, 1.0, 0.0));
+          vec3 color = uColor;
+          if (dotUp < uThreshold && dotUp > -0.1) {
+            color = mix(uColor, vec3(1.0, 0.2, 0.2), 0.8);
+          }
+          gl_FragColor = vec4(color, 1.0);
+        }
+      `,
+      side: THREE.DoubleSide
+    });
+  }, [material.color]);
 
   useEffect(() => {
     if (!containerRef.current) return;
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0f172a);
+    scene.background = new THREE.Color(0x020617);
     sceneRef.current = scene;
 
     const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 1000);
-    camera.position.set(30, 30, 30);
+    camera.position.set(35, 35, 35);
     cameraRef.current = camera;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ReinhardToneMapping;
-    renderer.toneMappingExposure = 1.2;
     containerRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
     scene.add(ambientLight);
     
-    const mainLight = new THREE.DirectionalLight(0xffffff, 1.2);
+    const mainLight = new THREE.DirectionalLight(0xffffff, 1.0);
     mainLight.position.set(30, 50, 30);
     mainLight.castShadow = true;
-    
-    mainLight.shadow.mapSize.width = 2048;
-    mainLight.shadow.mapSize.height = 2048;
-    mainLight.shadow.camera.left = -40;
-    mainLight.shadow.camera.right = 40;
-    mainLight.shadow.camera.top = 40;
-    mainLight.shadow.camera.bottom = -40;
-    mainLight.shadow.camera.near = 0.5;
-    mainLight.shadow.camera.far = 200;
-    mainLight.shadow.bias = -0.0005;
-    
     scene.add(mainLight);
 
     const bulbLight = new THREE.PointLight(0xffaa44, 0, 100);
     scene.add(bulbLight);
     bulbLightRef.current = bulbLight;
 
-    const bulbGeom = new THREE.SphereGeometry(1, 16, 16);
-    const bulbMat = new THREE.MeshBasicMaterial({ color: 0xffaa44, transparent: true, opacity: 0 });
-    const bulbMesh = new THREE.Mesh(bulbGeom, bulbMat);
-    scene.add(bulbMesh);
-    bulbMeshRef.current = bulbMesh;
-
     const bedGroup = new THREE.Group();
     const bedSize = 40;
     const bedGeom = new THREE.PlaneGeometry(bedSize, bedSize);
-    const bedMat = new THREE.MeshStandardMaterial({ 
-      color: 0x1e293b, 
-      roughness: 0.8,
-      metalness: 0.2
-    });
+    const bedMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8 });
     const bed = new THREE.Mesh(bedGeom, bedMat);
     bed.rotation.x = -Math.PI / 2;
     bed.receiveShadow = true;
     bedGroup.add(bed);
     
-    const grid = new THREE.GridHelper(bedSize, 20, 0x475569, 0x334155);
+    const grid = new THREE.GridHelper(bedSize, 20, 0x334155, 0x1e293b);
     grid.position.y = 0.01;
     bedGroup.add(grid);
-
-    const canvas = document.createElement('canvas');
-    canvas.width = 1024;
-    canvas.height = 256;
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      ctx.fillStyle = 'rgba(0,0,0,0)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.font = 'bold 110px sans-serif';
-      ctx.fillStyle = '#818cf8'; 
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('LIGHTCHARM 3D', 512, 128);
-    }
-    const brandTexture = new THREE.CanvasTexture(canvas);
-    const brandGeom = new THREE.PlaneGeometry(22, 5.5);
-    const brandMat = new THREE.MeshBasicMaterial({ 
-      map: brandTexture, 
-      transparent: true,
-      opacity: 0.7
-    });
-    const brandMesh = new THREE.Mesh(brandGeom, brandMat);
-    brandMesh.rotation.x = -Math.PI / 2;
-    brandMesh.position.set(0, 0.05, bedSize / 2 - 5); 
-    bedGroup.add(brandMesh);
-
     scene.add(bedGroup);
 
     const controls = new OrbitControls(camera, renderer.domElement);
@@ -144,11 +128,7 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
       color: material.color, 
       roughness: material.roughness, 
       metalness: material.metalness,
-      transmission: material.transmission,
-      transparent: material.opacity < 1,
-      opacity: material.opacity,
-      side: THREE.DoubleSide, 
-      wireframe: showWireframe 
+      side: THREE.DoubleSide 
     });
     
     const mesh = new THREE.Mesh(geometry, meshMaterial);
@@ -174,16 +154,12 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
       cameraRef.current.updateProjectionMatrix();
       rendererRef.current.setSize(width, height, false);
     });
-
     resizeObserver.observe(containerRef.current);
 
     return () => {
       resizeObserver.disconnect();
       if (requestRef.current) cancelAnimationFrame(requestRef.current);
       if (rendererRef.current) rendererRef.current.dispose();
-      if (containerRef.current && renderer.domElement) {
-        containerRef.current.removeChild(renderer.domElement);
-      }
     };
   }, []);
 
@@ -194,52 +170,66 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
       meshRef.current.geometry = newGeom;
       meshRef.current.position.y = params.height / 2;
       
-      const mat = meshRef.current.material as THREE.MeshPhysicalMaterial;
-      mat.color.set(material.color);
-      mat.roughness = material.roughness;
-      mat.metalness = material.metalness;
-      mat.transmission = material.transmission;
-      mat.opacity = material.opacity;
-      mat.transparent = material.opacity < 1;
-      mat.wireframe = showWireframe;
-      
-      if (isLightOn) {
-        mat.emissive.set(0xffaa44);
-        mat.emissiveIntensity = 0.4;
+      if (showPrintability) {
+        meshRef.current.material = overhangMaterial;
+        overhangMaterial.uniforms.uColor.value.set(material.color);
       } else {
-        mat.emissive.set(0x000000);
-        mat.emissiveIntensity = 0;
+        const mat = new THREE.MeshPhysicalMaterial({
+          color: material.color,
+          roughness: material.roughness,
+          metalness: material.metalness,
+          transmission: material.transmission,
+          opacity: material.opacity,
+          transparent: material.opacity < 1,
+          side: THREE.DoubleSide,
+          wireframe: showWireframe,
+          clippingPlanes: isCutaway ? [new THREE.Plane(new THREE.Vector3(0, 0, 1), 0)] : []
+        });
+        meshRef.current.material = mat;
+        if (rendererRef.current) rendererRef.current.localClippingEnabled = isCutaway;
       }
       
-      mat.needsUpdate = true;
+      if (isLightOn && !showPrintability) {
+        (meshRef.current.material as THREE.MeshPhysicalMaterial).emissive?.set(0xffaa44);
+        (meshRef.current.material as THREE.MeshPhysicalMaterial).emissiveIntensity = 0.4;
+      }
     }
-  }, [params, material, showWireframe, isLightOn, showPrintability]);
+  }, [params, material, showWireframe, isLightOn, showPrintability, isCutaway, overhangMaterial]);
 
   useEffect(() => {
-    if (bulbLightRef.current && bulbMeshRef.current) {
-      bulbLightRef.current.intensity = isLightOn ? 2.5 : 0;
-      (bulbMeshRef.current.material as THREE.MeshBasicMaterial).opacity = isLightOn ? 1 : 0;
-    }
+    if (bulbLightRef.current) bulbLightRef.current.intensity = isLightOn ? 2.5 : 0;
   }, [isLightOn]);
 
   return (
     <div className="relative w-full h-full min-h-[300px] rounded-xl overflow-hidden bg-slate-950">
       <div ref={containerRef} className="w-full h-full absolute inset-0" />
-      <div className="absolute bottom-3 left-3 flex gap-2">
+      <div className="absolute bottom-4 left-4 flex gap-2 z-20">
         <Button 
           variant="secondary" 
           size="sm" 
           onClick={() => setIsLightOn(!isLightOn)}
-          className={`gap-2 h-8 text-[10px] font-bold uppercase tracking-wider shadow-lg ${isLightOn ? 'bg-amber-100 text-amber-700 hover:bg-amber-200' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
+          className={`gap-2 h-9 text-[10px] font-black uppercase tracking-widest shadow-xl transition-all ${isLightOn ? 'bg-amber-100 text-amber-700' : 'bg-slate-800 text-slate-300'}`}
         >
-          {isLightOn ? <Lightbulb className="w-3 h-3" /> : <LightbulbOff className="w-3 h-3" />}
+          {isLightOn ? <Lightbulb className="w-4 h-4" /> : <LightbulbOff className="w-4 h-4" />}
           {isLightOn ? 'Light On' : 'Light Off'}
+        </Button>
+        <Button 
+          variant="secondary" 
+          size="sm" 
+          onClick={() => setIsCutaway(!isCutaway)}
+          className={`gap-2 h-9 text-[10px] font-black uppercase tracking-widest shadow-xl transition-all ${isCutaway ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-800 text-slate-300'}`}
+        >
+          <Scissors className="w-4 h-4" />
+          {isCutaway ? 'Full View' : 'Cutaway'}
         </Button>
       </div>
       {showPrintability && (
-        <div className="absolute top-3 right-3 bg-red-500/20 backdrop-blur-md border border-red-500/50 px-3 py-1.5 rounded-full flex items-center gap-2">
-          <ShieldAlert className="w-3 h-3 text-red-400" />
-          <span className="text-[9px] font-bold text-red-100 uppercase tracking-widest">Overhang Analysis Active</span>
+        <div className="absolute top-4 right-4 bg-red-500/20 backdrop-blur-md border border-red-500/50 px-4 py-2 rounded-2xl flex items-center gap-3 z-20">
+          <ShieldAlert className="w-4 h-4 text-red-400 animate-pulse" />
+          <div className="flex flex-col">
+            <span className="text-[10px] font-black text-red-100 uppercase tracking-widest">Overhang Warning</span>
+            <span className="text-[8px] text-red-200/60 font-bold uppercase">Red areas require support</span>
+          </div>
         </div>
       )}
     </div>
