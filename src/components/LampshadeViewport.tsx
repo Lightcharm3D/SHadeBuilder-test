@@ -42,13 +42,14 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
   useEffect(() => {
     if (!containerRef.current) return;
 
+    // Ensure we have dimensions before starting
+    const width = containerRef.current.clientWidth || 800;
+    const height = containerRef.current.clientHeight || 600;
+
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x0f172a);
     sceneRef.current = scene;
 
-    const width = containerRef.current.clientWidth || 800;
-    const height = containerRef.current.clientHeight || 600;
-    
     const camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 1000);
     camera.position.set(30, 30, 30);
     camera.lookAt(0, 0, 0);
@@ -166,12 +167,12 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     requestRef.current = requestAnimationFrame(animate);
 
     const handleResize = () => {
-      if (!containerRef.current) return;
+      if (!containerRef.current || !rendererRef.current) return;
       const w = containerRef.current.clientWidth;
       const h = containerRef.current.clientHeight;
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
-      renderer.setSize(w, h);
+      rendererRef.current.setSize(w, h);
     };
 
     window.addEventListener('resize', handleResize);
@@ -180,7 +181,9 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
       window.removeEventListener('resize', handleResize);
       if (requestRef.current) cancelAnimationFrame(requestRef.current);
       if (rendererRef.current) rendererRef.current.dispose();
-      if (containerRef.current && renderer.domElement) containerRef.current.removeChild(renderer.domElement);
+      if (containerRef.current && renderer.domElement) {
+        containerRef.current.removeChild(renderer.domElement);
+      }
     };
   }, []);
 
@@ -200,7 +203,6 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
       mat.transparent = material.opacity < 1;
       mat.wireframe = showWireframe;
       
-      // Update emissive properties based on light state
       if (isLightOn) {
         mat.emissive.set(0xffaa44);
         mat.emissiveIntensity = 0.4;

@@ -15,6 +15,7 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
   const sceneRef = useRef<THREE.Scene | null>(null);
   const meshRef = useRef<THREE.Mesh | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+  const requestRef = useRef<number | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
   const backlightRef = useRef<THREE.PointLight | null>(null);
   
@@ -23,15 +24,18 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
   useEffect(() => {
     if (!containerRef.current) return;
 
+    const width = containerRef.current.clientWidth || 800;
+    const height = containerRef.current.clientHeight || 600;
+
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x020617);
     sceneRef.current = scene;
 
-    const camera = new THREE.PerspectiveCamera(50, containerRef.current.clientWidth / containerRef.current.clientHeight, 0.1, 2000);
+    const camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 2000);
     camera.position.set(0, 50, 150);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(containerRef.current.clientWidth, containerRef.current.clientHeight);
+    renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
     containerRef.current.appendChild(renderer.domElement);
@@ -107,26 +111,28 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
     controlsRef.current = controls;
 
     const animate = () => {
-      requestAnimationFrame(animate);
       controls.update();
       renderer.render(scene, camera);
+      requestRef.current = requestAnimationFrame(animate);
     };
-    animate();
+    
+    requestRef.current = requestAnimationFrame(animate);
 
     const handleResize = () => {
-      if (!containerRef.current) return;
-      camera.aspect = containerRef.current.clientWidth / containerRef.current.clientHeight;
+      if (!containerRef.current || !rendererRef.current) return;
+      const w = containerRef.current.clientWidth;
+      const h = containerRef.current.clientHeight;
+      camera.aspect = w / h;
       camera.updateProjectionMatrix();
-      renderer.setSize(containerRef.current.clientWidth, containerRef.current.clientHeight);
+      rendererRef.current.setSize(w, h);
     };
 
     window.addEventListener('resize', handleResize);
 
     return () => {
       window.removeEventListener('resize', handleResize);
-      if (rendererRef.current) {
-        rendererRef.current.dispose();
-      }
+      if (requestRef.current) cancelAnimationFrame(requestRef.current);
+      if (rendererRef.current) rendererRef.current.dispose();
       if (containerRef.current && renderer.domElement) {
         containerRef.current.removeChild(renderer.domElement);
       }
