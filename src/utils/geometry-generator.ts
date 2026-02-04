@@ -170,26 +170,40 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       const density = params.gridDensity || 10;
       const geoms: THREE.BufferGeometry[] = [];
       const strutRadius = thickness / 2;
+      const hStep = height / density;
+      const aStep = (Math.PI * 2) / segments;
       
       for (let j = 0; j < density; j++) {
-        const y = -height / 2 + (j / density) * height;
-        const r = getRadiusAtHeight(y, params);
-        const ring = new THREE.TorusGeometry(r, strutRadius, 8, segments);
-        ring.rotateX(Math.PI / 2);
-        ring.translate(0, y, 0);
-        geoms.push(ring);
+        const y = -height / 2 + j * hStep;
+        const nextY = y + hStep;
+        const midY = y + hStep / 2;
         
-        const nextY = -height / 2 + ((j + 1) / density) * height;
-        if (j < density) {
-          for (let i = 0; i < segments; i += 4) {
-            const angle = (i / segments) * Math.PI * 2 + (j % 2 === 0 ? 0 : (Math.PI / segments) * 2);
-            const strut = new THREE.CylinderGeometry(strutRadius, strutRadius, height / density, 6);
-            strut.translate(0, (height / density) / 2, 0);
+        for (let i = 0; i < segments; i++) {
+          const angle = i * aStep;
+          const nextAngle = (i + 1) * aStep;
+          const r = getRadiusAtHeight(y, params);
+          const nr = getRadiusAtHeight(nextY, params);
+          const mr = getRadiusAtHeight(midY, params);
+
+          const p1 = new THREE.Vector3(Math.cos(angle) * r, y, Math.sin(angle) * r);
+          const p2 = new THREE.Vector3(Math.cos(nextAngle) * r, y, Math.sin(nextAngle) * r);
+          const p3 = new THREE.Vector3(Math.cos(angle + aStep/2) * mr, midY, Math.sin(angle + aStep/2) * mr);
+          const p4 = new THREE.Vector3(Math.cos(angle + aStep/2) * nr, nextY, Math.sin(angle + aStep/2) * nr);
+
+          // Create Y-shaped struts that form hexagons when tiled
+          const createStrut = (start: THREE.Vector3, end: THREE.Vector3) => {
+            const dist = start.distanceTo(end);
+            const strut = new THREE.CylinderGeometry(strutRadius, strutRadius, dist, 6);
+            strut.translate(0, dist / 2, 0);
             strut.rotateX(Math.PI / 2);
-            strut.rotateY(angle);
-            strut.translate(Math.cos(angle) * r, y, Math.sin(angle) * r);
-            geoms.push(strut);
-          }
+            strut.lookAt(end.clone().sub(start));
+            strut.translate(start.x, start.y, start.z);
+            return strut;
+          };
+
+          geoms.push(createStrut(p1, p3));
+          geoms.push(createStrut(p2, p3));
+          geoms.push(createStrut(p3, p4));
         }
       }
       geometry = BufferGeometryUtils.mergeGeometries(geoms);
