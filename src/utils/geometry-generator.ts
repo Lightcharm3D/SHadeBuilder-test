@@ -26,7 +26,8 @@ export type LampshadeType =
   | 'chevron_mesh'
   | 'spiral_ribs'
   | 'voronoi_wire'
-  | 'star_mesh';
+  | 'star_mesh'
+  | 'organic_mesh';
 
 export type SilhouetteType = 'straight' | 'hourglass' | 'bell' | 'convex' | 'concave' | 'tapered' | 'bulbous';
 export type FitterType = 'none' | 'spider' | 'uno';
@@ -215,30 +216,51 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
   };
 
   switch (type) {
-    case 'voronoi_wire': {
-      const cells = params.cellCount || 12;
+    case 'voronoi_wire':
+    case 'organic_mesh': {
+      const density = params.gridDensity || 10;
       const geoms: THREE.BufferGeometry[] = [];
       const strutRadius = thickness / 1.5;
-      const points: THREE.Vector3[] = [];
-      for (let i = 0; i < cells; i++) {
-        const a = pseudoNoise(i, 0, 0, params.seed) * Math.PI * 2;
-        const h = (pseudoNoise(0, i, 0, params.seed) - 0.5) * height;
-        const r = getRadiusAtHeight(h, params);
-        points.push(new THREE.Vector3(Math.cos(a) * r, h, Math.sin(a) * r));
-      }
+      const hStep = height / density;
+      const aStep = (Math.PI * 2) / segments;
+      const jitter = type === 'voronoi_wire' ? 0.6 : 0.3;
 
-      // Simple wireframe approximation by connecting nearby points
-      for (let i = 0; i < points.length; i++) {
-        const p1 = points[i];
-        const distances = points.map((p, idx) => ({ idx, d: p1.distanceTo(p) }))
-          .sort((a, b) => a.d - b.d)
-          .slice(1, 4); // Connect to 3 nearest neighbors
+      const getPoint = (i: number, j: number, layer = 0) => {
+        const seedOffset = layer * 1000;
+        const u = (i + (pseudoNoise(i, j, seedOffset, params.seed) - 0.5) * jitter) * aStep;
+        const v = (j + (pseudoNoise(seedOffset, i, j, params.seed) - 0.5) * jitter) * hStep - height / 2;
+        const r = getRadiusAtHeight(v, params);
+        return new THREE.Vector3(Math.cos(u) * r, v, Math.sin(u) * r);
+      };
 
-        distances.forEach(({ idx }) => {
-          if (idx > i) {
-            geoms.push(createStrut(p1, points[idx], strutRadius));
+      for (let j = 0; j <= density; j++) {
+        for (let i = 0; i < segments; i++) {
+          const p = getPoint(i, j);
+          
+          // Connect to right neighbor
+          const pRight = getPoint((i + 1) % segments, j);
+          geoms.push(createStrut(p, pRight, strutRadius));
+          
+          // Connect to top neighbor
+          if (j < density) {
+            const pUp = getPoint(i, j + 1);
+            geoms.push(createStrut(p, pUp, strutRadius));
+            
+            // Diagonal for "voronoi" look
+            const pDiag = getPoint((i + 1) % segments, j + 1);
+            geoms.push(createStrut(p, pDiag, strutRadius));
           }
-        });
+
+          if (type === 'organic_mesh') {
+            const p2 = getPoint(i, j, 1);
+            const pRight2 = getPoint((i + 1) % segments, j, 1);
+            geoms.push(createStrut(p2, pRight2, strutRadius));
+            if (j < density) {
+              const pUp2 = getPoint(i, j + 1, 1);
+              geoms.push(createStrut(p2, pUp2, strutRadius));
+            }
+          }
+        }
       }
       geometry = mergeGeometries(geoms);
       break;
