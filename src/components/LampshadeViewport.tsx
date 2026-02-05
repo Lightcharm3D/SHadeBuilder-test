@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three-stdlib';
 import { LampshadeParams, generateLampshadeGeometry } from '@/utils/geometry-generator';
 import { Button } from '@/components/ui/button';
-import { ShieldAlert, Scissors } from 'lucide-react';
+import { ShieldAlert, Scissors, Lightbulb } from 'lucide-react';
 
 export interface MaterialParams {
   color: string;
@@ -81,13 +81,18 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     scene.background = new THREE.Color(0x020617);
     sceneRef.current = scene;
 
-    // Camera adjusted for mm scale (200mm plate)
     const camera = new THREE.PerspectiveCamera(50, 1, 1, 5000);
     camera.position.set(250, 250, 250);
     cameraRef.current = camera;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    const renderer = new THREE.WebGLRenderer({ 
+      antialias: true, 
+      alpha: true,
+      powerPreference: "high-performance",
+      precision: "mediump" // Better for mobile performance
+    });
+    // Cap pixel ratio for mobile performance (Samsung A53 has high DPI)
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ReinhardToneMapping;
@@ -106,8 +111,8 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     mainLight.shadow.camera.top = 200;
     mainLight.shadow.camera.bottom = -200;
     mainLight.shadow.camera.far = 2000;
-    mainLight.shadow.mapSize.width = 1024;
-    mainLight.shadow.mapSize.height = 1024;
+    mainLight.shadow.mapSize.width = 512; // Reduced for mobile
+    mainLight.shadow.mapSize.height = 512;
     mainLight.shadow.bias = -0.001;
     
     scene.add(mainLight);
@@ -116,36 +121,25 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     scene.add(bulbLight);
     bulbLightRef.current = bulbLight;
 
-    // Build Plate 200x200mm
     const bedGroup = new THREE.Group();
     const bedSize = 200; 
     const bedGeom = new THREE.PlaneGeometry(bedSize, bedSize);
     
-    // Create Branding Texture
     const canvas = document.createElement('canvas');
-    canvas.width = 1024;
-    canvas.height = 1024;
+    canvas.width = 512;
+    canvas.height = 512;
     const ctx = canvas.getContext('2d');
     if (ctx) {
-      // Background
       ctx.fillStyle = '#0f172a';
-      ctx.fillRect(0, 0, 1024, 1024);
-      
-      // Border
+      ctx.fillRect(0, 0, 512, 512);
       ctx.strokeStyle = 'rgba(99, 102, 241, 0.2)';
-      ctx.lineWidth = 20;
-      ctx.strokeRect(10, 10, 1004, 1004);
-      
-      // Branding Text
+      ctx.lineWidth = 10;
+      ctx.strokeRect(5, 5, 502, 502);
       ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-      ctx.font = 'bold 60px sans-serif';
+      ctx.font = 'bold 30px sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('SHADEBUILDER X LITHOSTUDIO', 512, 900);
-      
-      ctx.font = 'bold 40px sans-serif';
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-      ctx.fillText('200 x 200 mm', 512, 960);
+      ctx.fillText('SHADEBUILDER X LITHOSTUDIO', 256, 450);
     }
     const bedTexture = new THREE.CanvasTexture(canvas);
     
@@ -166,6 +160,7 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
+    controls.dampingFactor = 0.1;
     controlsRef.current = controls;
 
     const geometry = generateLampshadeGeometry(params);
@@ -179,7 +174,6 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     const mesh = new THREE.Mesh(geometry, meshMaterial);
     mesh.castShadow = true;
     mesh.receiveShadow = true;
-    // Scale from cm to mm
     mesh.scale.set(10, 10, 10);
     mesh.position.y = (params.height * 10) / 2;
     scene.add(mesh);
@@ -248,34 +242,33 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
   }, [isLightOn]);
 
   return (
-    <div className="relative w-full h-full min-h-[300px] rounded-xl overflow-hidden bg-slate-950">
+    <div className="relative w-full h-full min-h-[300px] rounded-[2rem] overflow-hidden bg-slate-950">
       <div ref={containerRef} className="w-full h-full absolute inset-0" />
-      <div className="absolute bottom-4 left-4 flex gap-2 z-20">
+      <div className="absolute bottom-6 left-6 flex gap-3 z-20">
         <Button 
           variant="secondary" 
           size="sm" 
           onClick={() => setIsLightOn(!isLightOn)}
-          className={`gap-2 h-9 text-[10px] font-black uppercase tracking-widest shadow-xl transition-all ${isLightOn ? 'bg-amber-100 text-amber-700' : 'bg-slate-800 text-slate-300'}`}
+          className={`gap-2 h-12 px-5 text-[10px] font-black uppercase tracking-widest shadow-2xl transition-all rounded-2xl ${isLightOn ? 'bg-amber-100 text-amber-700' : 'bg-slate-800 text-slate-300'}`}
         >
-          <img src="/light-icon.png" alt="Light" className={`w-4 h-4 ${!isLightOn ? 'opacity-50 grayscale' : ''}`} />
+          <Lightbulb className={`w-4 h-4 ${!isLightOn ? 'opacity-50' : ''}`} />
           {isLightOn ? 'Light On' : 'Light Off'}
         </Button>
         <Button 
           variant="secondary" 
           size="sm" 
           onClick={() => setIsCutaway(!isCutaway)}
-          className={`gap-2 h-9 text-[10px] font-black uppercase tracking-widest shadow-xl transition-all ${isCutaway ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-800 text-slate-300'}`}
+          className={`gap-2 h-12 px-5 text-[10px] font-black uppercase tracking-widest shadow-xl transition-all rounded-2xl ${isCutaway ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-800 text-slate-300'}`}
         >
           <Scissors className="w-4 h-4" />
-          {isCutaway ? 'Full View' : 'Cutaway'}
+          {isCutaway ? 'Full' : 'Cut'}
         </Button>
       </div>
       {showPrintability && (
-        <div className="absolute top-4 right-4 bg-red-500/20 backdrop-blur-md border border-red-500/50 px-4 py-2 rounded-2xl flex items-center gap-3 z-20">
+        <div className="absolute top-6 right-6 bg-red-500/20 backdrop-blur-md border border-red-500/50 px-4 py-2 rounded-2xl flex items-center gap-3 z-20">
           <ShieldAlert className="w-4 h-4 text-red-400 animate-pulse" />
           <div className="flex flex-col">
-            <span className="text-[10px] font-black text-red-100 uppercase tracking-widest">Overhang Warning</span>
-            <span className="text-[8px] text-red-200/60 font-bold uppercase">Red areas require support</span>
+            <span className="text-[10px] font-black text-red-100 uppercase tracking-widest">Overhangs</span>
           </div>
         </div>
       )}

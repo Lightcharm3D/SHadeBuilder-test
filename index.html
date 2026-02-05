@@ -6,15 +6,17 @@
     <meta name="theme-color" content="#6366f1" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="description" content="ShadeBuilder X LithoStudio - Create custom 3D printable lampshades and lithophanes by LightCharm 3D" />
     <link rel="manifest" href="/manifest.json" />
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <title>ShadeBuilder X LithoStudio by LightCharm 3D</title>
     <style>
       body {
-        overscroll-behavior-y: contain;
+        overscroll-behavior-y: none;
         -webkit-tap-highlight-color: transparent;
         user-select: none;
+        background-color: #0f172a;
       }
       /* Handle safe areas for modern Android/iOS devices */
       .safe-area-pb {
@@ -22,6 +24,13 @@
       }
       .safe-area-pt {
         padding-top: env(safe-area-inset-top);
+      }
+      /* Prevent scrolling on the body to keep the app feel */
+      html, body {
+        height: 100%;
+        overflow: hidden;
+        position: fixed;
+        width: 100%;
       }
     </style>
   </head>

@@ -86,16 +86,11 @@ const Index = () => {
     }
     try {
       const exporter = new STLExporter();
-      
-      // Clone the mesh to avoid modifying the live preview
       const exportMesh = meshRef.current.clone();
-      // Scale from cm to mm (1 unit = 1mm in most slicers)
       exportMesh.scale.set(10, 10, 10);
       exportMesh.updateMatrixWorld();
-      
       const result = exporter.parse(exportMesh);
       const fileName = `lampshade-${params.type}-${Date.now()}.stl`;
-      
       await saveStlFile(result as string, fileName);
       showSuccess("STL file exported successfully!");
     } catch (err) {
@@ -154,7 +149,7 @@ const Index = () => {
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="h-full bg-[#f8fafc] flex flex-col font-sans pt-safe pb-safe"
+      className="h-full bg-[#f8fafc] flex flex-col font-sans pt-safe pb-safe overflow-hidden"
     >
       <header className="h-16 lg:h-20 border-b border-slate-200/60 bg-white/80 backdrop-blur-2xl px-4 lg:px-10 flex items-center justify-between shrink-0 z-40 sticky top-0">
         <div className="flex items-center gap-3 lg:gap-6">
@@ -169,24 +164,24 @@ const Index = () => {
             </div>
           </div>
           <div>
-            <h1 className="text-sm lg:text-lg font-black tracking-tighter text-slate-900 leading-none flex items-center gap-1">
+            <h1 className="text-xs lg:text-lg font-black tracking-tighter text-slate-900 leading-none flex items-center gap-1">
               SHADEBUILDER <span className="text-slate-400">X</span> LITHOSTUDIO
             </h1>
-            <p className="text-[8px] lg:text-[9px] text-indigo-600 font-bold uppercase tracking-[0.3em] mt-1">by LightCharm 3D</p>
+            <p className="text-[7px] lg:text-[9px] text-indigo-600 font-bold uppercase tracking-[0.3em] mt-1">by LightCharm 3D</p>
           </div>
         </div>
         
         <div className="flex items-center gap-2">
           <Link to="/lithophane">
-            <Button variant="outline" size="sm" className="gap-2 border-slate-200 h-9 lg:h-11 px-3 lg:px-6 rounded-xl lg:rounded-2xl font-black text-[9px] lg:text-[10px] uppercase tracking-widest">
-              <img src="/litho-icon.png" alt="Lithophane" className="w-5 h-5 object-contain" />
+            <Button variant="outline" size="sm" className="gap-2 border-slate-200 h-9 lg:h-11 px-3 lg:px-6 rounded-xl lg:rounded-2xl font-black text-[8px] lg:text-[10px] uppercase tracking-widest">
+              <img src="/litho-icon.png" alt="Lithophane" className="w-4 h-4 lg:w-5 lg:h-5 object-contain" />
               <span className="hidden xs:inline">Lithophane</span>
             </Button>
           </Link>
         </div>
       </header>
       
-      <main className="flex-1 flex flex-col lg:flex-row p-4 lg:p-8 gap-4 lg:gap-8 overflow-hidden w-full">
+      <main className="flex-1 flex flex-col lg:flex-row p-3 lg:p-8 gap-3 lg:gap-8 overflow-hidden w-full">
         <div className="flex-1 relative min-h-0 bg-slate-950 rounded-[2rem] lg:rounded-[3.5rem] shadow-2xl border border-slate-800/50 overflow-hidden studio-shadow">
           <LampshadeViewport 
             params={params} 
@@ -199,7 +194,7 @@ const Index = () => {
           <div className="absolute top-4 left-4 z-20">
             <div className="flex items-center gap-2 bg-black/40 backdrop-blur-xl px-3 py-1.5 rounded-xl border border-white/10">
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[8px] font-black uppercase tracking-[0.2em] text-white/80">Live Preview</span>
+              <span className="text-[8px] font-black uppercase tracking-[0.2em] text-white/80">Live</span>
             </div>
           </div>
 
@@ -215,13 +210,13 @@ const Index = () => {
                   initial={{ scale: 0.9, opacity: 0, y: 20 }}
                   animate={{ scale: 1, opacity: 1, y: 0 }}
                   exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                  className="bg-slate-900/80 backdrop-blur-3xl p-8 lg:p-12 rounded-[2.5rem] lg:rounded-[3.5rem] border border-white/10 text-center max-w-xs lg:max-w-sm shadow-[0_0_100px_rgba(99,102,241,0.2)] mx-4"
+                  className="bg-slate-900/80 backdrop-blur-3xl p-8 lg:p-12 rounded-[2.5rem] lg:rounded-[3.5rem] border border-white/10 text-center max-w-[280px] lg:max-w-sm shadow-[0_0_100px_rgba(99,102,241,0.2)] mx-4"
                 >
-                  <div className="w-24 h-24 bg-indigo-500/20 rounded-[1.5rem] overflow-hidden flex items-center justify-center mx-auto mb-6 shadow-inner">
+                  <div className="w-20 h-20 lg:w-24 lg:h-24 bg-indigo-500/20 rounded-[1.5rem] overflow-hidden flex items-center justify-center mx-auto mb-6 shadow-inner">
                     <img src="/logo.png" alt="Welcome Logo" className="w-full h-full object-cover" />
                   </div>
-                  <h3 className="text-white font-black text-xl lg:text-2xl mb-3 tracking-tight">Ready to Design</h3>
-                  <p className="text-slate-400 text-xs lg:text-sm leading-relaxed mb-8">
+                  <h3 className="text-white font-black text-lg lg:text-2xl mb-3 tracking-tight">Ready to Design</h3>
+                  <p className="text-slate-400 text-[10px] lg:text-sm leading-relaxed mb-8">
                     Welcome to the professional lampshade studio. Start adjusting parameters to create your masterpiece.
                   </p>
                   <Button 
@@ -239,11 +234,11 @@ const Index = () => {
             <div className="absolute bottom-4 right-4 z-30">
               <Drawer>
                 <DrawerTrigger asChild>
-                  <Button className="w-16 h-16 rounded-full brand-gradient shadow-2xl flex items-center justify-center text-white p-0 overflow-hidden">
+                  <Button className="w-16 h-16 rounded-full brand-gradient shadow-2xl flex items-center justify-center text-white p-0 overflow-hidden border-4 border-white/10">
                     <img src="/settings-icon.png" alt="Settings" className="w-full h-full object-cover" />
                   </Button>
                 </DrawerTrigger>
-                <DrawerContent className="h-[85vh] bg-white rounded-t-[2.5rem]">
+                <DrawerContent className="h-[85vh] bg-white rounded-t-[2.5rem] border-none">
                   <div className="p-4 h-full overflow-hidden">
                     <ControlPanel 
                       params={params} 
