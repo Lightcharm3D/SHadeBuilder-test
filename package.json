@@ -9,8 +9,8 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
-    "static": "cap sync",
-    "open:android": "cap open android",
+    "static": "npx cap sync",
+    "open:android": "npx cap open android",
     "build:android": "npm run build && npx cap sync android"
   },
   "dependencies": {
