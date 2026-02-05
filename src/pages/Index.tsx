@@ -11,7 +11,7 @@ import * as THREE from 'three';
 import { showSuccess, showError } from '@/utils/toast';
 import { Ruler, Image as ImageIcon, Box, Lightbulb, ChevronRight, Weight, Sparkles, Cpu, Activity, Users, Layers, Zap, Settings2, Link as LinkIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/mobile-hooks';
 import { Drawer, DrawerContent, DrawerTrigger, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { saveStlFile } from '@/utils/file-saver';
 
@@ -106,9 +106,13 @@ const Index = () => {
   };
 
   const copyPublicLink = () => {
-    const url = window.location.href.split('#')[0];
+    const url = window.location.origin;
+    if (url.includes('localhost') || url.includes('127.0.0.1')) {
+      showError("You are on Localhost. Please use the public .dyad.sh URL from the preview window.");
+      return;
+    }
     navigator.clipboard.writeText(url);
-    showSuccess("Public Link copied! Paste this into your Webador code.");
+    showSuccess("Public Link copied! Use this in your Webador snippet.");
   };
 
   const handleRandomize = () => {

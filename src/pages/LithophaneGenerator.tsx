@@ -9,9 +9,9 @@ import { LithophaneParams, generateLithophaneGeometry } from '@/utils/lithophane
 import { STLExporter } from 'three-stdlib';
 import * as THREE from 'three';
 import { showSuccess, showError } from '@/utils/toast';
-import { ArrowLeft, Sparkles, Image as ImageIcon, Cpu, ChevronRight, Share2, History, Settings2, Trash2 } from 'lucide-react';
+import { ArrowLeft, Sparkles, Image as ImageIcon, Cpu, ChevronRight, Share2, History, Settings2, Trash2, Link as LinkIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/mobile-hooks';
 import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer';
 import { saveStlFile } from '@/utils/file-saver';
 
@@ -102,6 +102,16 @@ const LithophaneGenerator = () => {
     }
   }, [params, history]);
 
+  const copyPublicLink = () => {
+    const url = window.location.origin;
+    if (url.includes('localhost') || url.includes('127.0.0.1')) {
+      showError("You are on Localhost. Please use the public .dyad.sh URL from the preview window.");
+      return;
+    }
+    navigator.clipboard.writeText(url);
+    showSuccess("Public Link copied!");
+  };
+
   const handleShare = async () => {
     if (navigator.share) {
       try {
@@ -178,6 +188,15 @@ const LithophaneGenerator = () => {
         </div>
         
         <div className="flex items-center gap-2">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={copyPublicLink}
+            className="gap-2 border-slate-200 h-9 lg:h-11 px-3 lg:px-6 rounded-xl lg:rounded-2xl font-black text-[8px] lg:text-[10px] uppercase tracking-widest text-indigo-600 hover:bg-indigo-50"
+          >
+            <LinkIcon className="w-4 h-4" />
+            <span className="hidden xs:inline">Copy Public Link</span>
+          </Button>
           <Button variant="ghost" size="icon" onClick={handleShare} className="rounded-xl h-10 w-10 text-slate-400 hover:text-indigo-600">
             <Share2 className="w-4 h-4" />
           </Button>
