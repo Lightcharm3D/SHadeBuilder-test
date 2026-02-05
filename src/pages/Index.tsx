@@ -106,13 +106,9 @@ const Index = () => {
   };
 
   const copyPublicLink = () => {
-    const url = window.location.origin;
-    if (url.includes('localhost') || url.includes('127.0.0.1')) {
-      showError("You are on Localhost. Please use the public .dyad.sh URL from the preview window.");
-      return;
-    }
+    const url = window.location.origin + window.location.pathname;
     navigator.clipboard.writeText(url);
-    showSuccess("Public Link copied! Use this in your Webador snippet.");
+    showSuccess("Public Link copied!");
   };
 
   const handleRandomize = () => {
@@ -167,7 +163,7 @@ const Index = () => {
             <div className="absolute -inset-1 lg:-inset-2 brand-gradient rounded-xl lg:rounded-2xl blur-lg opacity-20 group-hover:opacity-40 transition duration-500"></div>
             <div className="relative w-10 h-10 lg:w-12 lg:h-12 rounded-xl lg:rounded-2xl overflow-hidden shadow-xl transform group-hover:scale-105 transition-transform duration-300">
               <img 
-                src="/logo.png" 
+                src="logo.png" 
                 alt="Logo" 
                 className="w-full h-full object-cover"
               />
@@ -193,7 +189,7 @@ const Index = () => {
           </Button>
           <Link to="/lithophane">
             <Button variant="outline" size="sm" className="gap-2 border-slate-200 h-9 lg:h-11 px-3 lg:px-6 rounded-xl lg:rounded-2xl font-black text-[8px] lg:text-[10px] uppercase tracking-widest">
-              <img src="/litho-icon.png" alt="Lithophane" className="w-4 h-4 lg:w-5 lg:h-5 object-contain" />
+              <img src="litho-icon.png" alt="Lithophane" className="w-4 h-4 lg:w-5 lg:h-5 object-contain" />
               <span className="hidden xs:inline">Lithophane</span>
             </Button>
           </Link>
@@ -232,7 +228,7 @@ const Index = () => {
                   className="bg-slate-900/80 backdrop-blur-3xl p-8 lg:p-12 rounded-[2.5rem] lg:rounded-[3.5rem] border border-white/10 text-center max-w-[280px] lg:max-w-sm shadow-[0_0_100px_rgba(99,102,241,0.2)] mx-4"
                 >
                   <div className="w-20 h-20 lg:w-24 lg:h-24 bg-indigo-500/20 rounded-[1.5rem] overflow-hidden flex items-center justify-center mx-auto mb-6 shadow-inner">
-                    <img src="/logo.png" alt="Welcome Logo" className="w-full h-full object-cover" />
+                    <img src="logo.png" alt="Welcome Logo" className="w-full h-full object-cover" />
                   </div>
                   <h3 className="text-white font-black text-lg lg:text-2xl mb-3 tracking-tight">Ready to Design</h3>
                   <p className="text-slate-400 text-[10px] lg:text-sm leading-relaxed mb-8">
@@ -254,7 +250,7 @@ const Index = () => {
               <Drawer>
                 <DrawerTrigger asChild>
                   <Button className="w-16 h-16 rounded-full brand-gradient shadow-2xl flex items-center justify-center text-white p-0 overflow-hidden border-4 border-white/10">
-                    <img src="/settings-icon.png" alt="Settings" className="w-full h-full object-cover" />
+                    <img src="settings-icon.png" alt="Settings" className="w-full h-full object-cover" />
                   </Button>
                 </DrawerTrigger>
                 <DrawerContent className="h-[85vh] bg-white rounded-t-[2.5rem] border-none">
