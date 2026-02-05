@@ -58,6 +58,7 @@ export interface LampshadeParams {
   thickness: number;
   segments: number;
   seed: number;
+  buildPlateSize: number; // in mm
   
   // Structure
   internalRibs: number;

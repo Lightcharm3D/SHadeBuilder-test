@@ -428,6 +428,14 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
               <div className="space-y-4">
                 <div className="space-y-2">
                   <div className="flex justify-between text-[9px] font-black uppercase tracking-[0.25em] text-slate-400">
+                    <span>Build Plate Size</span>
+                    <span className="text-indigo-600 font-mono font-bold">{params.buildPlateSize || 200} mm</span>
+                  </div>
+                  <Slider value={[params.buildPlateSize || 200]} min={100} max={500} step={10} onValueChange={([v]) => updateParam('buildPlateSize', v)} className="py-2" />
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex justify-between text-[9px] font-black uppercase tracking-[0.25em] text-slate-400">
                     <span>Wall Thickness</span>
                     <span className="text-indigo-600 font-mono font-bold">{params.thickness.toFixed(2)} cm</span>
                   </div>

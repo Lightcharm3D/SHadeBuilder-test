@@ -107,7 +107,6 @@ const LithophaneControls: React.FC<LithophaneControlsProps> = ({
           </div>
         </div>
 
-        {/* Text Personalization */}
         <div className="space-y-3 p-3 bg-slate-50 rounded-lg border border-slate-100">
           <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-1">
             <Type className="w-3 h-3" /> Personalization
@@ -184,6 +183,12 @@ const LithophaneControls: React.FC<LithophaneControlsProps> = ({
               </Button>
             )}
           </div>
+          
+          <div className="space-y-3 p-3 bg-slate-50 rounded-lg border border-slate-100">
+            <div className="flex justify-between text-[9px] font-medium"><span>Build Plate Size</span><span>{params.buildPlateSize || 200} mm</span></div>
+            <Slider value={[params.buildPlateSize || 200]} min={100} max={500} step={10} onValueChange={([v]) => updateParam('buildPlateSize', v)} className="py-1" />
+          </div>
+
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1">
               <Label className="text-[9px]">Width (cm)</Label>

@@ -38,6 +38,7 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
   const requestRef = useRef<number | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
   const bulbLightRef = useRef<THREE.PointLight | null>(null);
+  const bedGroupRef = useRef<THREE.Group | null>(null);
   
   const [isLightOn, setIsLightOn] = useState(false);
   const [isCutaway, setIsCutaway] = useState(false);
@@ -89,9 +90,8 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
       antialias: true, 
       alpha: true,
       powerPreference: "high-performance",
-      precision: "mediump" // Better for mobile performance
+      precision: "mediump"
     });
-    // Cap pixel ratio for mobile performance (Samsung A53 has high DPI)
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -111,7 +111,7 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     mainLight.shadow.camera.top = 200;
     mainLight.shadow.camera.bottom = -200;
     mainLight.shadow.camera.far = 2000;
-    mainLight.shadow.mapSize.width = 512; // Reduced for mobile
+    mainLight.shadow.mapSize.width = 512;
     mainLight.shadow.mapSize.height = 512;
     mainLight.shadow.bias = -0.001;
     
@@ -122,41 +122,8 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     bulbLightRef.current = bulbLight;
 
     const bedGroup = new THREE.Group();
-    const bedSize = 200; 
-    const bedGeom = new THREE.PlaneGeometry(bedSize, bedSize);
-    
-    const canvas = document.createElement('canvas');
-    canvas.width = 512;
-    canvas.height = 512;
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      ctx.fillStyle = '#0f172a';
-      ctx.fillRect(0, 0, 512, 512);
-      ctx.strokeStyle = 'rgba(99, 102, 241, 0.2)';
-      ctx.lineWidth = 10;
-      ctx.strokeRect(5, 5, 502, 502);
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-      ctx.font = 'bold 30px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('SHADEBUILDER X LITHOSTUDIO', 256, 450);
-    }
-    const bedTexture = new THREE.CanvasTexture(canvas);
-    
-    const bedMat = new THREE.MeshStandardMaterial({ 
-      map: bedTexture,
-      color: 0xffffff, 
-      roughness: 0.8 
-    });
-    const bed = new THREE.Mesh(bedGeom, bedMat);
-    bed.rotation.x = -Math.PI / 2;
-    bed.receiveShadow = true;
-    bedGroup.add(bed);
-    
-    const grid = new THREE.GridHelper(bedSize, 20, 0x334155, 0x1e293b);
-    grid.position.y = 0.1;
-    bedGroup.add(grid);
     scene.add(bedGroup);
+    bedGroupRef.current = bedGroup;
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
@@ -203,6 +170,57 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
       if (rendererRef.current) rendererRef.current.dispose();
     };
   }, []);
+
+  useEffect(() => {
+    if (!bedGroupRef.current) return;
+    
+    // Clear existing bed
+    while(bedGroupRef.current.children.length > 0){ 
+      const child = bedGroupRef.current.children[0];
+      if (child instanceof THREE.Mesh) {
+        child.geometry.dispose();
+        (child.material as THREE.Material).dispose();
+      }
+      bedGroupRef.current.remove(child); 
+    }
+
+    const bedSize = params.buildPlateSize || 200;
+    const bedGeom = new THREE.PlaneGeometry(bedSize, bedSize);
+    
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(0, 0, 512, 512);
+      ctx.strokeStyle = 'rgba(99, 102, 241, 0.2)';
+      ctx.lineWidth = 10;
+      ctx.strokeRect(5, 5, 502, 502);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+      ctx.font = 'bold 30px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('SHADEBUILDER X LITHOSTUDIO', 256, 450);
+      ctx.font = 'bold 20px sans-serif';
+      ctx.fillText(`${bedSize} x ${bedSize} mm`, 256, 485);
+    }
+    const bedTexture = new THREE.CanvasTexture(canvas);
+    
+    const bedMat = new THREE.MeshStandardMaterial({ 
+      map: bedTexture,
+      color: 0xffffff, 
+      roughness: 0.8 
+    });
+    const bed = new THREE.Mesh(bedGeom, bedMat);
+    bed.rotation.x = -Math.PI / 2;
+    bed.receiveShadow = true;
+    bedGroupRef.current.add(bed);
+    
+    const grid = new THREE.GridHelper(bedSize, 20, 0x334155, 0x1e293b);
+    grid.position.y = 0.1;
+    bedGroupRef.current.add(grid);
+  }, [params.buildPlateSize]);
 
   useEffect(() => {
     if (meshRef.current) {

@@ -7,9 +7,10 @@ import { Button } from '@/components/ui/button';
 
 interface ViewportProps {
   geometry: THREE.BufferGeometry | null;
+  buildPlateSize?: number;
 }
 
-const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
+const LithophaneViewport: React.FC<ViewportProps> = ({ geometry, buildPlateSize = 200 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const meshRef = useRef<THREE.Mesh | null>(null);
@@ -18,6 +19,7 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
   const requestRef = useRef<number | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
   const backlightRef = useRef<THREE.PointLight | null>(null);
+  const bedGroupRef = useRef<THREE.Group | null>(null);
   
   const [isBacklightOn, setIsBacklightOn] = useState(false);
 
@@ -67,56 +69,9 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
     scene.add(backlight);
     backlightRef.current = backlight;
 
-    // Build Plate 200x200mm
-    const bedSize = 200; 
     const bedGroup = new THREE.Group();
-    
-    const bedGeom = new THREE.PlaneGeometry(bedSize, bedSize);
-    
-    // Create Branding Texture
-    const canvas = document.createElement('canvas');
-    canvas.width = 1024;
-    canvas.height = 1024;
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      // Background
-      ctx.fillStyle = '#0f172a';
-      ctx.fillRect(0, 0, 1024, 1024);
-      
-      // Border
-      ctx.strokeStyle = 'rgba(99, 102, 241, 0.2)';
-      ctx.lineWidth = 20;
-      ctx.strokeRect(10, 10, 1004, 1004);
-      
-      // Branding Text
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-      ctx.font = 'bold 60px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('SHADEBUILDER X LITHOSTUDIO', 512, 900);
-      
-      ctx.font = 'bold 40px sans-serif';
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-      ctx.fillText('200 x 200 mm', 512, 960);
-    }
-    const bedTexture = new THREE.CanvasTexture(canvas);
-
-    const bedMat = new THREE.MeshStandardMaterial({ 
-      map: bedTexture,
-      color: 0xffffff, 
-      roughness: 0.8,
-      metalness: 0.2
-    });
-    const bed = new THREE.Mesh(bedGeom, bedMat);
-    bed.rotation.x = -Math.PI / 2;
-    bed.receiveShadow = true;
-    bedGroup.add(bed);
-    
-    const grid = new THREE.GridHelper(bedSize, 20, 0x475569, 0x334155);
-    grid.position.y = 0.1;
-    bedGroup.add(grid);
-
     scene.add(bedGroup);
+    bedGroupRef.current = bedGroup;
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
@@ -164,6 +119,58 @@ const LithophaneViewport: React.FC<ViewportProps> = ({ geometry }) => {
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (!bedGroupRef.current) return;
+    
+    while(bedGroupRef.current.children.length > 0){ 
+      const child = bedGroupRef.current.children[0];
+      if (child instanceof THREE.Mesh) {
+        child.geometry.dispose();
+        (child.material as THREE.Material).dispose();
+      }
+      bedGroupRef.current.remove(child); 
+    }
+
+    const bedSize = buildPlateSize; 
+    const bedGeom = new THREE.PlaneGeometry(bedSize, bedSize);
+    
+    const canvas = document.createElement('canvas');
+    canvas.width = 1024;
+    canvas.height = 1024;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(0, 0, 1024, 1024);
+      ctx.strokeStyle = 'rgba(99, 102, 241, 0.2)';
+      ctx.lineWidth = 20;
+      ctx.strokeRect(10, 10, 1004, 1004);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+      ctx.font = 'bold 60px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('SHADEBUILDER X LITHOSTUDIO', 512, 900);
+      ctx.font = 'bold 40px sans-serif';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+      ctx.fillText(`${bedSize} x ${bedSize} mm`, 512, 960);
+    }
+    const bedTexture = new THREE.CanvasTexture(canvas);
+
+    const bedMat = new THREE.MeshStandardMaterial({ 
+      map: bedTexture,
+      color: 0xffffff, 
+      roughness: 0.8,
+      metalness: 0.2
+    });
+    const bed = new THREE.Mesh(bedGeom, bedMat);
+    bed.rotation.x = -Math.PI / 2;
+    bed.receiveShadow = true;
+    bedGroupRef.current.add(bed);
+    
+    const grid = new THREE.GridHelper(bedSize, 20, 0x475569, 0x334155);
+    grid.position.y = 0.1;
+    bedGroupRef.current.add(grid);
+  }, [buildPlateSize]);
 
   useEffect(() => {
     if (sceneRef.current && geometry) {
