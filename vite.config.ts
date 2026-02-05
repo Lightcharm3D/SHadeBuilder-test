@@ -5,7 +5,8 @@ import path from "path";
 import { viteSingleFile } from "vite-plugin-singlefile";
 
 export default defineConfig(() => ({
-  base: './',
+  // This matches your GitHub repository name exactly
+  base: '/SHadeBuilder-test/',
   server: {
     host: "::",
     port: 8080,
