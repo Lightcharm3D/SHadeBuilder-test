@@ -27,7 +27,12 @@ export type LampshadeType =
   | 'spiral_ribs'
   | 'voronoi_wire'
   | 'star_mesh'
-  | 'organic_mesh';
+  | 'organic_mesh'
+  | 'woven_basket'
+  | 'bubble_foam'
+  | 'parametric_fins'
+  | 'spiral_stairs'
+  | 'diamond_plate';
 
 export type SilhouetteType = 'straight' | 'hourglass' | 'bell' | 'convex' | 'concave' | 'tapered' | 'bulbous';
 export type FitterType = 'none' | 'spider' | 'uno';
@@ -130,6 +135,24 @@ function getDisplacementAt(angle: number, y: number, params: LampshadeParams): n
       const depth = params.patternDepth || 0.3;
       return (Math.sin(angle * scale + normY * scale) * Math.sin(angle * scale - normY * scale)) * depth;
     }
+    case 'bubble_foam': {
+      const scale = params.patternScale || 10;
+      const depth = params.patternDepth || 0.5;
+      return (Math.sin(angle * scale) * Math.cos(normY * scale * 2) + Math.sin(normY * scale) * Math.cos(angle * scale * 2)) * depth;
+    }
+    case 'diamond_plate': {
+      const scale = params.patternScale || 15;
+      const depth = params.patternDepth || 0.3;
+      const a = Math.sin(angle * scale);
+      const b = Math.sin(normY * scale * 2);
+      return (Math.abs(a) > 0.8 && Math.abs(b) > 0.8) ? depth : 0;
+    }
+    case 'spiral_stairs': {
+      const steps = params.ribCount || 12;
+      const depth = params.ribDepth || 0.8;
+      const stepIndex = Math.floor((angle / (Math.PI * 2)) * steps + normY * steps);
+      return (stepIndex % 2 === 0) ? depth : 0;
+    }
     case 'petal_bloom': {
       const petals = params.ribCount || 8;
       const bloom = normY * 2;
@@ -216,6 +239,77 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
   };
 
   switch (type) {
+    case 'woven_basket': {
+      const density = params.gridDensity || 12;
+      const geoms: THREE.BufferGeometry[] = [];
+      const strutRadius = thickness / 1.5;
+      const hStep = height / density;
+      const aStep = (Math.PI * 2) / segments;
+
+      for (let j = 0; j <= density; j++) {
+        const y = -height / 2 + j * hStep;
+        for (let i = 0; i < segments; i++) {
+          const angle = i * aStep;
+          const r = getRadiusAtHeight(y, params);
+          
+          // Weaving offset
+          const weaveOffset = Math.sin(i * 2 + j * 2) * (thickness * 0.8);
+          const p1 = new THREE.Vector3(Math.cos(angle) * (r + weaveOffset), y, Math.sin(angle) * (r + weaveOffset));
+
+          // Horizontal ring
+          const pNext = new THREE.Vector3(Math.cos(angle + aStep) * (r - weaveOffset), y, Math.sin(angle + aStep) * (r - weaveOffset));
+          geoms.push(createStrut(p1, pNext, strutRadius));
+
+          // Vertical strut
+          if (j < density) {
+            const ny = y + hStep;
+            const nr = getRadiusAtHeight(ny, params);
+            const nWeaveOffset = Math.sin(i * 2 + (j + 1) * 2) * (thickness * 0.8);
+            const pUp = new THREE.Vector3(Math.cos(angle) * (nr + nWeaveOffset), ny, Math.sin(angle) * (nr + nWeaveOffset));
+            geoms.push(createStrut(p1, pUp, strutRadius));
+          }
+        }
+      }
+      geometry = mergeGeometries(geoms);
+      break;
+    }
+
+    case 'parametric_fins': {
+      const count = params.slotCount || 16;
+      const finThick = params.slotWidth || thickness;
+      const geoms: THREE.BufferGeometry[] = [];
+      const coreScale = 0.7;
+      
+      const coreProfile = getClosedProfilePoints(40, thickness);
+      const coreGeom = new THREE.LatheGeometry(coreProfile, segments);
+      coreGeom.scale(coreScale, 1, coreScale);
+      geoms.push(coreGeom);
+
+      for (let i = 0; i < count; i++) {
+        const baseAngle = (i / count) * Math.PI * 2;
+        const finGeom = new THREE.BoxGeometry(thickness * 5, height, finThick, 1, 64, 1);
+        const pos = finGeom.attributes.position;
+        const twist = (params.twistAngle || 90) * (Math.PI / 180);
+
+        for (let j = 0; j < pos.count; j++) {
+          const py = pos.getY(j);
+          const normY = (py + height / 2) / height;
+          const r = getRadiusAtHeight(py, params);
+          const angle = baseAngle + normY * twist;
+          
+          const px = pos.getX(j);
+          const pz = pos.getZ(j);
+          
+          // Project fin onto curved path
+          const distFromCore = px + (r * (1 + coreScale) / 2);
+          pos.setXYZ(j, Math.cos(angle) * distFromCore, py, Math.sin(angle) * distFromCore);
+        }
+        geoms.push(finGeom);
+      }
+      geometry = mergeGeometries(geoms);
+      break;
+    }
+
     case 'voronoi_wire':
     case 'organic_mesh': {
       const density = params.gridDensity || 10;
@@ -402,7 +496,10 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
     case 'voronoi':
     case 'origami':
     case 'ribbed_drum':
-    case 'spiral_ribs': {
+    case 'spiral_ribs':
+    case 'bubble_foam':
+    case 'diamond_plate':
+    case 'spiral_stairs': {
       const segs = type === 'origami' ? (params.foldCount || 12) * 2 : segments;
       geometry = new THREE.LatheGeometry(closedProfile, segs);
       const pos = geometry.attributes.position;

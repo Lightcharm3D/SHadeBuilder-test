@@ -169,6 +169,11 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="rounded-2xl">
+                  <SelectItem value="woven_basket">Woven Basket</SelectItem>
+                  <SelectItem value="bubble_foam">Bubble Foam</SelectItem>
+                  <SelectItem value="parametric_fins">Parametric Fins</SelectItem>
+                  <SelectItem value="spiral_stairs">Spiral Stairs</SelectItem>
+                  <SelectItem value="diamond_plate">Diamond Plate</SelectItem>
                   <SelectItem value="organic_mesh">Organic Mesh</SelectItem>
                   <SelectItem value="star_mesh">Star Mesh</SelectItem>
                   <SelectItem value="voronoi_wire">Voronoi Wireframe</SelectItem>
