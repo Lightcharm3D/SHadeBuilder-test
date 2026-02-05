@@ -1,15 +1,13 @@
 <!-- 
-  WEBADOR EMBED INSTRUCTIONS:
-  1. In Webador, drag the "Embed Code" (or "HTML") element to your page.
-  2. Click "Edit" on the element.
-  3. Paste the code below.
-  4. Replace "YOUR_APP_URL" with your public .dyad.sh link.
-     (Use the "Copy Public Link" button in the app header to get it!)
+  WEBADOR + GITHUB PAGES INSTRUCTIONS:
+  1. Host your app on GitHub Pages.
+  2. Copy your GitHub Pages URL (e.g., https://username.github.io/repo/).
+  3. Paste it into the 'src' attribute below.
 -->
 
 <div id="shadebuilder-container" style="width: 100%; height: 850px; overflow: hidden; border-radius: 32px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15); border: 1px solid rgba(0,0,0,0.05); background: #f8fafc;">
   <iframe 
-    src="YOUR_APP_URL" 
+    src="https://YOUR_GITHUB_USERNAME.github.io/YOUR_REPO_NAME/" 
     style="width: 100%; height: 100%; border: none;" 
     allow="clipboard-read; clipboard-write; fullscreen"
     title="ShadeBuilder X LithoStudio"
@@ -17,7 +15,6 @@
 </div>
 
 <style>
-  /* Responsive height for mobile devices on Webador */
   @media (max-width: 768px) {
     #shadebuilder-container {
       height: 750px !important;
