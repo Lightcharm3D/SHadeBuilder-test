@@ -89,9 +89,10 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
       antialias: true, 
       alpha: true,
       powerPreference: "high-performance",
-      precision: "mediump" // Better for mobile performance
+      precision: "mediump" 
     });
-    // Cap pixel ratio for mobile performance (Samsung A53 has high DPI)
+    
+    // Optimized for Samsung A53 5G (High DPI but mid-range GPU)
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -111,7 +112,7 @@ const LampshadeViewport: React.FC<ViewportProps> = ({
     mainLight.shadow.camera.top = 200;
     mainLight.shadow.camera.bottom = -200;
     mainLight.shadow.camera.far = 2000;
-    mainLight.shadow.mapSize.width = 512; // Reduced for mobile
+    mainLight.shadow.mapSize.width = 512; 
     mainLight.shadow.mapSize.height = 512;
     mainLight.shadow.bias = -0.001;
     

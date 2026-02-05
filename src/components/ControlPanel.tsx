@@ -36,6 +36,7 @@ const PRESETS: Record<string, Partial<LampshadeParams>> = {
   'Wave Rings': { type: 'wave_rings', silhouette: 'bell', frequency: 12, amplitude: 0.6, height: 15, topRadius: 4, bottomRadius: 9 },
   'Crystal Gem': { type: 'faceted_gem', silhouette: 'concave', noiseStrength: 1.5, height: 14, topRadius: 5, bottomRadius: 9 },
   'Diamond Lattice': { type: 'diamond_lattice', silhouette: 'straight', gridDensity: 20, twistAngle: 180, height: 16, topRadius: 6, bottomRadius: 6 },
+  'Fractal Tree': { type: 'fractal_tree', silhouette: 'trumpet', height: 20, topRadius: 8, bottomRadius: 5 },
 };
 
 const FILAMENT_PRESETS: Record<string, Partial<MaterialParams>> = {
@@ -194,6 +195,11 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
+                  <SelectItem value="fractal_tree">Fractal Tree</SelectItem>
+                  <SelectItem value="geometric_weave">Geometric Weave</SelectItem>
+                  <SelectItem value="parametric_waves">Parametric Waves</SelectItem>
+                  <SelectItem value="scalloped_edge">Scalloped Edge</SelectItem>
+                  <SelectItem value="twisted_column">Twisted Column</SelectItem>
                   <SelectItem value="honeycomb_v2">Honeycomb V2</SelectItem>
                   <SelectItem value="crystal_lattice">Crystal Lattice</SelectItem>
                   <SelectItem value="organic_veins">Organic Veins</SelectItem>
@@ -242,6 +248,11 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
+                  <SelectItem value="ovoid">Ovoid</SelectItem>
+                  <SelectItem value="scalloped">Scalloped</SelectItem>
+                  <SelectItem value="conic_stepped">Conic Stepped</SelectItem>
+                  <SelectItem value="twisted_profile">Twisted Profile</SelectItem>
+                  <SelectItem value="fluted">Fluted</SelectItem>
                   <SelectItem value="trumpet">Trumpet</SelectItem>
                   <SelectItem value="teardrop">Teardrop</SelectItem>
                   <SelectItem value="diamond">Diamond</SelectItem>
