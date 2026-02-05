@@ -49,13 +49,19 @@ export type LampshadeType =
   | 'geometric_weave'
   | 'parametric_waves'
   | 'scalloped_edge'
-  | 'twisted_column';
+  | 'twisted_column'
+  | 'organic_coral'
+  | 'geometric_stars'
+  | 'ribbed_spiral'
+  | 'faceted_poly'
+  | 'wave_shell_v2';
 
 export type SilhouetteType = 
   | 'straight' | 'hourglass' | 'bell' | 'convex' | 'concave' 
   | 'tapered' | 'bulbous' | 'flared' | 'waisted' | 'asymmetric' 
   | 'trumpet' | 'teardrop' | 'diamond' | 'stepped' | 'wavy'
-  | 'ovoid' | 'scalloped' | 'conic_stepped' | 'twisted_profile' | 'fluted';
+  | 'ovoid' | 'scalloped' | 'conic_stepped' | 'twisted_profile' | 'fluted'
+  | 'onion' | 'pagoda' | 'egg' | 'barrel' | 'spindle' | 'chalice' | 'urn';
 
 export type FitterType = 'none' | 'spider' | 'uno';
 
@@ -119,6 +125,27 @@ function getRadiusAtHeight(y: number, params: LampshadeParams): number {
   let r = bottomRadius + (topRadius - bottomRadius) * t;
   
   switch (silhouette) {
+    case 'onion':
+      r *= 1 + Math.sin(t * Math.PI * 0.8) * 0.7;
+      break;
+    case 'pagoda':
+      r *= 1 + (Math.sin(t * Math.PI * 3) * 0.15 + (1 - t) * 0.4);
+      break;
+    case 'egg':
+      r *= 1 + Math.sin(t * Math.PI) * 0.35;
+      break;
+    case 'barrel':
+      r *= 1 + Math.sin(t * Math.PI) * 0.25;
+      break;
+    case 'spindle':
+      r *= 1 + Math.sin(t * Math.PI) * 0.6 * (1 - Math.abs(t - 0.5) * 2);
+      break;
+    case 'chalice':
+      r *= 1 + Math.pow(t - 0.5, 2) * 2.0;
+      break;
+    case 'urn':
+      r *= 1 + Math.sin(t * Math.PI * 1.2) * 0.5;
+      break;
     case 'hourglass':
       r *= 1 + Math.pow(Math.sin(t * Math.PI), 2) * -0.3;
       break;
@@ -186,6 +213,34 @@ function getDisplacementAt(angle: number, y: number, params: LampshadeParams): n
   const rotatedAngle = angle + (patternRotation * Math.PI / 180) * normY;
 
   switch (type) {
+    case 'organic_coral': {
+      const scale = params.noiseScale || 1.5;
+      const strength = params.noiseStrength || 1.0;
+      const n = pseudoNoise(Math.cos(rotatedAngle) * scale, y * scale, Math.sin(rotatedAngle) * scale, seed);
+      return n > 0.6 ? (n - 0.6) * strength * 4 : 0;
+    }
+    case 'geometric_stars': {
+      const count = params.ribCount || 6;
+      const depth = params.ribDepth || 0.8;
+      return Math.abs(Math.sin(rotatedAngle * count)) * depth;
+    }
+    case 'ribbed_spiral': {
+      const count = params.ribCount || 12;
+      const twist = (params.twistAngle || 180) * (Math.PI / 180);
+      return Math.sin(rotatedAngle * count + normY * twist) * (params.ribDepth || 0.5);
+    }
+    case 'faceted_poly': {
+      const sides = params.sides || 8;
+      const strength = params.noiseStrength || 0.5;
+      const step = (Math.PI * 2) / sides;
+      const localAngle = Math.floor(rotatedAngle / step) * step;
+      return pseudoNoise(Math.cos(localAngle), y, Math.sin(localAngle), seed) * strength;
+    }
+    case 'wave_shell_v2': {
+      const freq = params.frequency || 12;
+      const amp = params.amplitude || 0.8;
+      return Math.sin(rotatedAngle * freq) * Math.cos(normY * freq * 0.5) * amp;
+    }
     case 'ribbed_drum':
       return Math.sin(rotatedAngle * (params.ribCount || 24)) * (params.ribDepth || 0.4);
     case 'ribbed_conic':
@@ -725,6 +780,11 @@ export function generateLampshadeGeometry(params: LampshadeParams): THREE.Buffer
       break;
     }
 
+    case 'organic_coral':
+    case 'geometric_stars':
+    case 'ribbed_spiral':
+    case 'faceted_poly':
+    case 'wave_shell_v2':
     case 'faceted_gem':
     case 'knurled':
     case 'knurled_v2':

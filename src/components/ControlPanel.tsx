@@ -190,11 +190,16 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">Template</Label>
-              <Select value={params.type} onValueChange={(v) => updateParam('type', v)}>
+              <Select value={params.type} onValueChange={(v: any) => updateParam('type', v)}>
                 <SelectTrigger className="bg-slate-50 border-slate-200 h-11 text-[10px] font-bold rounded-xl">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
+                  <SelectItem value="organic_coral">Organic Coral</SelectItem>
+                  <SelectItem value="geometric_stars">Geometric Stars</SelectItem>
+                  <SelectItem value="ribbed_spiral">Ribbed Spiral</SelectItem>
+                  <SelectItem value="faceted_poly">Faceted Poly</SelectItem>
+                  <SelectItem value="wave_shell_v2">Wave Shell V2</SelectItem>
                   <SelectItem value="fractal_tree">Fractal Tree</SelectItem>
                   <SelectItem value="geometric_weave">Geometric Weave</SelectItem>
                   <SelectItem value="parametric_waves">Parametric Waves</SelectItem>
@@ -248,6 +253,13 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
+                  <SelectItem value="onion">Onion</SelectItem>
+                  <SelectItem value="pagoda">Pagoda</SelectItem>
+                  <SelectItem value="egg">Egg</SelectItem>
+                  <SelectItem value="barrel">Barrel</SelectItem>
+                  <SelectItem value="spindle">Spindle</SelectItem>
+                  <SelectItem value="chalice">Chalice</SelectItem>
+                  <SelectItem value="urn">Urn</SelectItem>
                   <SelectItem value="ovoid">Ovoid</SelectItem>
                   <SelectItem value="scalloped">Scalloped</SelectItem>
                   <SelectItem value="conic_stepped">Conic Stepped</SelectItem>
