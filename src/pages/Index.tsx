@@ -9,7 +9,7 @@ import { LampshadeParams, LampshadeType, SilhouetteType } from '@/utils/geometry
 import { STLExporter } from 'three-stdlib';
 import * as THREE from 'three';
 import { showSuccess, showError } from '@/utils/toast';
-import { Ruler, Image as ImageIcon, Box, Lightbulb, ChevronRight, Weight, Sparkles, Cpu, Activity, Users, Layers, Zap, Settings2 } from 'lucide-react';
+import { Ruler, Image as ImageIcon, Box, Lightbulb, ChevronRight, Weight, Sparkles, Cpu, Activity, Users, Layers, Zap, Settings2, Link as LinkIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Drawer, DrawerContent, DrawerTrigger, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
@@ -105,6 +105,12 @@ const Index = () => {
     showSuccess("Parameters reset to default");
   };
 
+  const copyPublicLink = () => {
+    const url = window.location.href.split('#')[0];
+    navigator.clipboard.writeText(url);
+    showSuccess("Public Link copied! Paste this into your Webador code.");
+  };
+
   const handleRandomize = () => {
     const types: LampshadeType[] = [
       'ribbed_drum', 'spiral_twist', 'voronoi', 'wave_shell', 'geometric_poly', 
@@ -172,6 +178,15 @@ const Index = () => {
         </div>
         
         <div className="flex items-center gap-2">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={copyPublicLink}
+            className="gap-2 border-slate-200 h-9 lg:h-11 px-3 lg:px-6 rounded-xl lg:rounded-2xl font-black text-[8px] lg:text-[10px] uppercase tracking-widest text-indigo-600 hover:bg-indigo-50"
+          >
+            <LinkIcon className="w-4 h-4" />
+            <span className="hidden xs:inline">Copy Public Link</span>
+          </Button>
           <Link to="/lithophane">
             <Button variant="outline" size="sm" className="gap-2 border-slate-200 h-9 lg:h-11 px-3 lg:px-6 rounded-xl lg:rounded-2xl font-black text-[8px] lg:text-[10px] uppercase tracking-widest">
               <img src="/litho-icon.png" alt="Lithophane" className="w-4 h-4 lg:w-5 lg:h-5 object-contain" />
